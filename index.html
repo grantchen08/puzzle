@@ -459,15 +459,18 @@
             let isDragging = false;
 
             canvas.addEventListener('touchstart', e => {
+                // Prevent the browser from scrolling the page on touch
+                e.preventDefault();
                 touchStartX = e.changedTouches[0].screenX;
                 touchStartY = e.changedTouches[0].screenY;
-            }, { passive: true });
+            }, { passive: false });
 
             canvas.addEventListener('touchend', e => {
+                e.preventDefault();
                 touchEndX = e.changedTouches[0].screenX;
                 touchEndY = e.changedTouches[0].screenY;
                 handleSwipe();
-            }, { passive: true });
+            }, { passive: false });
             
             canvas.addEventListener('mousedown', e => {
                 mouseStartX = e.clientX;
@@ -521,5 +524,6 @@
     </script>
 </body>
 </html>
+
 
 
