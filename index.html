@@ -197,6 +197,7 @@
             let grid = [];
             let score = 0;
             let isMoving = false;
+            let newTile = null; // For pop-in animation
 
             const TILE_DATA = [
                 { emoji: '⛺', score: 2 },   // Level 1
@@ -224,6 +225,7 @@
                 score = 0;
                 updateScore(0);
                 gameOverOverlay.classList.remove('show');
+                newTile = null;
                 addRandomTile();
                 addRandomTile();
                 resizeCanvas();
@@ -250,11 +252,15 @@
                         if (level > 0) {
                             const tile = TILE_DATA[level - 1];
                             if (tile) {
-                                const fontSize = cellSize * 0.6;
+                                const scale = (newTile && newTile.r === r && newTile.c === c) ? newTile.scale : 1;
+                                const fontSize = cellSize * 0.6 * scale;
+                                const xPos = x + cellSize / 2;
+                                const yPos = y + cellSize / 2;
+
                                 ctx.font = `${fontSize}px sans-serif`;
                                 ctx.textAlign = 'center';
                                 ctx.textBaseline = 'middle';
-                                ctx.fillText(tile.emoji, x + cellSize / 2, y + cellSize / 2);
+                                ctx.fillText(tile.emoji, xPos, yPos);
                             }
                         }
                     }
@@ -293,6 +299,7 @@
                 if (emptyCells.length > 0) {
                     const { r, c } = emptyCells[Math.floor(Math.random() * emptyCells.length)];
                     grid[r][c] = 1; // Always spawn a Level 1 tile (Tent)
+                    newTile = { r, c, scale: 0 };
                 }
             }
 
@@ -374,12 +381,31 @@
                  const moved = moveGrid(direction);
                  if (moved) {
                     isMoving = true;
-                    setTimeout(() => {
-                        addRandomTile();
+                    addRandomTile();
+
+                    let startTime = null;
+                    const animationDuration = 200; // ms
+
+                    function animate(timestamp) {
+                        if (!startTime) startTime = timestamp;
+                        const progress = timestamp - startTime;
+                        const scale = Math.min(progress / animationDuration, 1);
+
+                        if (newTile) {
+                            newTile.scale = scale;
+                        }
+
                         drawBoard();
-                        if (isGameOver()) showGameOver();
-                        isMoving = false;
-                    }, 100); // Short delay for game feel
+
+                        if (progress < animationDuration) {
+                            requestAnimationFrame(animate);
+                        } else {
+                            newTile = null; // Animation finished
+                            if (isGameOver()) showGameOver();
+                            isMoving = false;
+                        }
+                    }
+                    requestAnimationFrame(animate);
                  }
             }
 
