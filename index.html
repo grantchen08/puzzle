@@ -2,24 +2,22 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>2048 Game</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>City Builder Puzzle</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --board-bg: #bbada0;
-            --grid-gap: 12px;
-            --cell-bg: #cdc1b4;
-            --text-dark: #776e65;
-            --text-light: #f9f6f2;
-            --font-family: 'Inter', sans-serif;
+            --board-bg: #a39384;
+            --cell-bg: #c3b6a9;
+            --font-family: 'Poppins', sans-serif;
+            --text-dark: #6b5f54;
         }
 
         body {
             font-family: var(--font-family);
-            background-color: #faf8ef;
+            background-color: #f7f2ed;
             color: var(--text-dark);
             display: flex;
             justify-content: center;
@@ -28,12 +26,7 @@
             margin: 0;
             padding: 16px;
             box-sizing: border-box;
-            -webkit-touch-callout: none; /* iOS Safari */
-            -webkit-user-select: none; /* Safari */
-            -khtml-user-select: none; /* Konqueror HTML */
-            -moz-user-select: none; /* Old versions of Firefox */
-            -ms-user-select: none; /* Internet Explorer/Edge */
-            user-select: none; /* Non-prefixed version, currently supported by Chrome, Opera and Firefox */
+            overflow: hidden; /* Prevents scrollbars from appearing */
         }
 
         .game-container {
@@ -53,7 +46,7 @@
         }
 
         h1 {
-            font-size: 4rem;
+            font-size: 2.5rem;
             margin: 0;
             font-weight: 700;
         }
@@ -74,7 +67,8 @@
 
         .score-title {
             font-size: 0.8rem;
-            font-weight: 400;
+            font-weight: 600;
+            text-transform: uppercase;
         }
 
         #score {
@@ -83,7 +77,7 @@
         }
 
         #new-game-btn {
-            background-color: #8f7a66;
+            background-color: #8b7969;
             color: white;
             border: none;
             padding: 12px 20px;
@@ -95,7 +89,7 @@
         }
 
         #new-game-btn:hover {
-            background-color: #9e8b77;
+            background-color: #9c8a7a;
         }
 
         .board-container {
@@ -120,7 +114,7 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background-color: rgba(238, 228, 218, 0.73);
+            background-color: rgba(247, 242, 237, 0.85);
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -143,9 +137,8 @@
             margin: 0 0 20px 0;
         }
         
-        /* Custom button for the overlay */
         #try-again-btn {
-            background-color: #8f7a66;
+            background-color: #8b7969;
             color: white;
             border: none;
             padding: 12px 20px;
@@ -156,16 +149,15 @@
             transition: background-color 0.2s ease;
         }
         #try-again-btn:hover {
-            background-color: #9e8b77;
+            background-color: #9c8a7a;
         }
 
-        /* Responsive Design */
         @media (max-width: 480px) {
-            h1 { font-size: 2.5rem; }
+            h1 { font-size: 2rem; }
             .score-container { padding: 5px 15px; }
             #score { font-size: 1.2rem; }
             #new-game-btn, #try-again-btn { padding: 10px 15px; font-size: 0.9rem;}
-            #game-over-overlay h2 { font-size: 2rem; }
+            #game-over-overlay h2 { font-size: 2.5rem; }
         }
 
     </style>
@@ -174,7 +166,7 @@
 
     <div class="game-container">
         <div class="header">
-            <h1>2048</h1>
+            <h1>City Merge</h1>
             <div class="controls">
                 <div class="score-container">
                     <div class="score-title">SCORE</div>
@@ -185,7 +177,6 @@
         </div>
         <div class="board-container">
             <canvas id="game-canvas"></canvas>
-            <!-- Game Over Screen -->
             <div id="game-over-overlay">
                 <h2>Game Over!</h2>
                 <button id="try-again-btn">Try Again</button>
@@ -201,27 +192,24 @@
             const newGameBtn = document.getElementById('new-game-btn');
             const tryAgainBtn = document.getElementById('try-again-btn');
             const gameOverOverlay = document.getElementById('game-over-overlay');
-            const size = 4;
+            
+            const SIZE = 4;
             let grid = [];
             let score = 0;
             let isMoving = false;
 
-            const tileColors = {
-                2:    { bg: '#eee4da', text: '#776e65' },
-                4:    { bg: '#ede0c8', text: '#776e65' },
-                8:    { bg: '#f2b179', text: '#f9f6f2' },
-                16:   { bg: '#f59563', text: '#f9f6f2' },
-                32:   { bg: '#f67c5f', text: '#f9f6f2' },
-                64:   { bg: '#f65e3b', text: '#f9f6f2' },
-                128:  { bg: '#edcf72', text: '#f9f6f2' },
-                256:  { bg: '#edcc61', text: '#f9f6f2' },
-                512:  { bg: '#edc850', text: '#f9f6f2' },
-                1024: { bg: '#edc53f', text: '#f9f6f2' },
-                2048: { bg: '#edc22e', text: '#f9f6f2' },
-                super: { bg: '#3c3a32', text: '#f9f6f2' }
-            };
-            const boardBgColor = '#bbada0';
-            const cellBgColor = '#cdc1b4';
+            const TILE_DATA = [
+                { emoji: '⛺', score: 2 },   // Level 1
+                { emoji: '🛖', score: 4 },   // Level 2
+                { emoji: '🏠', score: 8 },   // Level 3
+                { emoji: '🏡', score: 16 },  // Level 4
+                { emoji: '🏢', score: 32 },  // Level 5
+                { emoji: '🏙️', score: 64 },  // Level 6
+                { emoji: '🏰', score: 128 }, // Level 7
+                { emoji: '🏛️', score: 256 }, // Level 8
+                { emoji: '🗼', score: 512 }, // Level 9
+                { emoji: '🚀', score: 1024 } // Level 10 - SciFi!
+            ];
 
             function resizeCanvas() {
                 const container = canvas.parentElement;
@@ -231,9 +219,8 @@
                 drawBoard();
             }
 
-            // --- Game Initialization ---
             function setupGame() {
-                grid = Array.from({ length: size }, () => Array(size).fill(0));
+                grid = Array.from({ length: SIZE }, () => Array(SIZE).fill(0));
                 score = 0;
                 updateScore(0);
                 gameOverOverlay.classList.remove('show');
@@ -242,48 +229,38 @@
                 resizeCanvas();
             }
 
-            // --- Drawing and Updating UI ---
             function drawBoard() {
-                const gap = canvas.width * 0.03; // ~12px on a 500px board
-                const cellSize = (canvas.width - (size + 1) * gap) / size;
+                const gap = canvas.width * 0.03;
+                const cellSize = (canvas.width - (SIZE + 1) * gap) / SIZE;
                 const cornerRadius = cellSize * 0.05;
 
-                // Draw board background
-                ctx.fillStyle = boardBgColor;
+                ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--board-bg');
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-                for (let r = 0; r < size; r++) {
-                    for (let c = 0; c < size; c++) {
+                for (let r = 0; r < SIZE; r++) {
+                    for (let c = 0; c < SIZE; c++) {
                         const x = c * (cellSize + gap) + gap;
                         const y = r * (cellSize + gap) + gap;
                         
-                        // Draw empty cell
-                        ctx.fillStyle = cellBgColor;
+                        ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--cell-bg');
                         drawRoundedRect(ctx, x, y, cellSize, cellSize, cornerRadius);
                         ctx.fill();
 
-                        if (grid[r][c] !== 0) {
-                            const tileValue = grid[r][c];
-                            const colors = tileColors[tileValue] || tileColors.super;
-
-                            // Draw tile
-                            ctx.fillStyle = colors.bg;
-                            drawRoundedRect(ctx, x, y, cellSize, cellSize, cornerRadius);
-                            ctx.fill();
-                            
-                            // Draw text
-                            ctx.fillStyle = colors.text;
-                            const fontSize = tileValue > 1000 ? cellSize * 0.3 : tileValue > 100 ? cellSize * 0.35 : cellSize * 0.4;
-                            ctx.font = `bold ${fontSize}px ${getComputedStyle(document.body).fontFamily}`;
-                            ctx.textAlign = 'center';
-                            ctx.textBaseline = 'middle';
-                            ctx.fillText(tileValue, x + cellSize / 2, y + cellSize / 2);
+                        const level = grid[r][c];
+                        if (level > 0) {
+                            const tile = TILE_DATA[level - 1];
+                            if (tile) {
+                                const fontSize = cellSize * 0.6;
+                                ctx.font = `${fontSize}px sans-serif`;
+                                ctx.textAlign = 'center';
+                                ctx.textBaseline = 'middle';
+                                ctx.fillText(tile.emoji, x + cellSize / 2, y + cellSize / 2);
+                            }
                         }
                     }
                 }
             }
             
-            // Helper to draw rounded rectangles
             function drawRoundedRect(ctx, x, y, width, height, radius) {
                 ctx.beginPath();
                 ctx.moveTo(x + radius, y);
@@ -298,17 +275,15 @@
                 ctx.closePath();
             }
 
-
             function updateScore(newScore) {
                 score = newScore;
                 scoreDisplay.textContent = score;
             }
 
-            // --- Game Logic (Same as before) ---
             function addRandomTile() {
                 const emptyCells = [];
-                for (let r = 0; r < size; r++) {
-                    for (let c = 0; c < size; c++) {
+                for (let r = 0; r < SIZE; r++) {
+                    for (let c = 0; c < SIZE; c++) {
                         if (grid[r][c] === 0) {
                             emptyCells.push({ r, c });
                         }
@@ -317,131 +292,74 @@
 
                 if (emptyCells.length > 0) {
                     const { r, c } = emptyCells[Math.floor(Math.random() * emptyCells.length)];
-                    grid[r][c] = Math.random() < 0.9 ? 2 : 4;
-                }
-            }
-
-            // --- Movement Logic ---
-            function handleMove(e) {
-                if (isMoving) return;
-                
-                let moved = false;
-                switch (e.key) {
-                    case 'ArrowUp': moved = moveUp(); break;
-                    case 'ArrowDown': moved = moveDown(); break;
-                    case 'ArrowLeft': moved = moveLeft(); break;
-                    case 'ArrowRight': moved = moveRight(); break;
-                    default: return;
-                }
-
-                if (moved) {
-                    isMoving = true;
-                    setTimeout(() => {
-                        addRandomTile();
-                        drawBoard();
-                        if (isGameOver()) {
-                           showGameOver();
-                        }
-                        isMoving = false;
-                    }, 100);
+                    grid[r][c] = 1; // Always spawn a Level 1 tile (Tent)
                 }
             }
 
             function processLine(line) {
-                let filtered = line.filter(val => val);
+                let filtered = line.filter(val => val > 0);
                 let newLine = [];
                 let scoreIncrease = 0;
                 for (let i = 0; i < filtered.length; i++) {
                     if (i + 1 < filtered.length && filtered[i] === filtered[i + 1]) {
-                        const mergedValue = filtered[i] * 2;
-                        newLine.push(mergedValue);
-                        scoreIncrease += mergedValue;
+                        const newLevel = filtered[i] + 1;
+                        if (newLevel <= TILE_DATA.length) {
+                             newLine.push(newLevel);
+                             scoreIncrease += TILE_DATA[newLevel - 1].score;
+                        } else {
+                            newLine.push(filtered[i]); // Max level, don't merge
+                        }
                         i++;
                     } else {
                         newLine.push(filtered[i]);
                     }
                 }
-                while (newLine.length < size) {
+                while (newLine.length < SIZE) {
                     newLine.push(0);
                 }
                 return { newLine, scoreIncrease };
             }
 
-            function moveLeft() {
-                let moved = false;
+            function moveGrid(direction) {
+                let originalGrid = JSON.stringify(grid);
                 let scoreIncrease = 0;
-                const newGrid = [];
-                for (let r = 0; r < size; r++) {
-                    const result = processLine(grid[r]);
-                    if (JSON.stringify(result.newLine) !== JSON.stringify(grid[r])) moved = true;
-                    scoreIncrease += result.scoreIncrease;
-                    newGrid.push(result.newLine);
+                let newGrid = grid.map(row => [...row]); // Deep copy
+
+                if (direction === 'left' || direction === 'right') {
+                    for (let r = 0; r < SIZE; r++) {
+                        let row = newGrid[r];
+                        if (direction === 'right') row.reverse();
+                        let result = processLine(row);
+                        scoreIncrease += result.scoreIncrease;
+                        newGrid[r] = direction === 'right' ? result.newLine.reverse() : result.newLine;
+                    }
+                } else { // 'up' or 'down'
+                    newGrid = transpose(newGrid);
+                    for (let r = 0; r < SIZE; r++) {
+                        let row = newGrid[r];
+                        if (direction === 'down') row.reverse();
+                        let result = processLine(row);
+                        scoreIncrease += result.scoreIncrease;
+                        newGrid[r] = direction === 'down' ? result.newLine.reverse() : result.newLine;
+                    }
+                    newGrid = transpose(newGrid);
                 }
+                
                 grid = newGrid;
                 updateScore(score + scoreIncrease);
-                return moved;
+                return JSON.stringify(grid) !== originalGrid;
             }
 
-            function moveRight() {
-                let moved = false;
-                let scoreIncrease = 0;
-                const newGrid = [];
-                for (let r = 0; r < size; r++) {
-                    const reversedRow = grid[r].slice().reverse();
-                    const result = processLine(reversedRow);
-                    if (JSON.stringify(result.newLine.slice().reverse()) !== JSON.stringify(grid[r])) moved = true;
-                    scoreIncrease += result.scoreIncrease;
-                    newGrid.push(result.newLine.reverse());
-                }
-                grid = newGrid;
-                updateScore(score + scoreIncrease);
-                return moved;
-            }
-            
             function transpose(matrix) {
                 return matrix[0].map((col, i) => matrix.map(row => row[i]));
             }
 
-            function moveUp() {
-                const transposedGrid = transpose(grid);
-                let moved = false;
-                let scoreIncrease = 0;
-                const newTransposedGrid = [];
-                for (let r = 0; r < size; r++) {
-                    const result = processLine(transposedGrid[r]);
-                    if (JSON.stringify(result.newLine) !== JSON.stringify(transposedGrid[r])) moved = true;
-                    scoreIncrease += result.scoreIncrease;
-                    newTransposedGrid.push(result.newLine);
-                }
-                grid = transpose(newTransposedGrid);
-                updateScore(score + scoreIncrease);
-                return moved;
-            }
-            
-            function moveDown() {
-                const transposedGrid = transpose(grid);
-                let moved = false;
-                let scoreIncrease = 0;
-                const newTransposedGrid = [];
-                for (let r = 0; r < size; r++) {
-                    const reversedRow = transposedGrid[r].slice().reverse();
-                    const result = processLine(reversedRow);
-                    if (JSON.stringify(result.newLine.slice().reverse()) !== JSON.stringify(transposedGrid[r])) moved = true;
-                    scoreIncrease += result.scoreIncrease;
-                    newTransposedGrid.push(result.newLine.reverse());
-                }
-                grid = transpose(newTransposedGrid);
-                updateScore(score + scoreIncrease);
-                return moved;
-            }
-
-            // --- Game Over Logic ---
             function isGameOver() {
-                for (let r = 0; r < size; r++) {
-                    for (let c = 0; c < size; c++) {
+                for (let r = 0; r < SIZE; r++) {
+                    for (let c = 0; c < SIZE; c++) {
                         if (grid[r][c] === 0) return false;
-                        if (r < size - 1 && grid[r][c] === grid[r + 1][c]) return false;
-                        if (c < size - 1 && grid[r][c] === grid[r][c + 1]) return false;
+                        if (r < SIZE - 1 && grid[r][c] === grid[r + 1][c]) return false;
+                        if (c < SIZE - 1 && grid[r][c] === grid[r][c + 1]) return false;
                     }
                 }
                 return true;
@@ -451,69 +369,70 @@
                 gameOverOverlay.classList.add('show');
             }
             
-            // --- Touch Controls for Mobile ---
-            let touchStartX = 0, touchStartY = 0, touchEndX = 0, touchEndY = 0;
-
-            // --- Mouse Drag Controls ---
-            let mouseStartX = 0, mouseStartY = 0;
-            let isDragging = false;
-
-            canvas.addEventListener('touchstart', e => {
-                // Prevent the browser from scrolling the page on touch
-                e.preventDefault();
-                touchStartX = e.changedTouches[0].screenX;
-                touchStartY = e.changedTouches[0].screenY;
-            }, { passive: false });
-
-            canvas.addEventListener('touchend', e => {
-                e.preventDefault();
-                touchEndX = e.changedTouches[0].screenX;
-                touchEndY = e.changedTouches[0].screenY;
-                handleSwipe();
-            }, { passive: false });
-            
-            canvas.addEventListener('mousedown', e => {
-                mouseStartX = e.clientX;
-                mouseStartY = e.clientY;
-                isDragging = true;
-            });
-
-            canvas.addEventListener('mouseup', e => {
-                if (!isDragging) return;
-                isDragging = false;
-                const mouseEndX = e.clientX;
-                const mouseEndY = e.clientY;
-                handleDrag(mouseStartX, mouseStartY, mouseEndX, mouseEndY);
-            });
-            
-            canvas.addEventListener('mouseleave', () => {
-                isDragging = false;
-            });
-
-            function handleSwipe() {
-                handleDrag(touchStartX, touchStartY, touchEndX, touchEndY);
+            function handleInput(direction) {
+                 if (isMoving) return;
+                 const moved = moveGrid(direction);
+                 if (moved) {
+                    isMoving = true;
+                    setTimeout(() => {
+                        addRandomTile();
+                        drawBoard();
+                        if (isGameOver()) showGameOver();
+                        isMoving = false;
+                    }, 100); // Short delay for game feel
+                 }
             }
 
-            function handleDrag(startX, startY, endX, endY) {
-                if (isMoving) return;
-                const dx = endX - startX;
-                const dy = endY - startY;
-                if (Math.max(Math.abs(dx), Math.abs(dy)) > 30) { // Threshold for drag
-                    let moved = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? moveRight() : moveLeft()) : (dy > 0 ? moveDown() : moveUp());
-                    if (moved) {
-                        isMoving = true;
-                        setTimeout(() => {
-                            addRandomTile();
-                            drawBoard();
-                            if (isGameOver()) showGameOver();
-                            isMoving = false;
-                        }, 100);
+            // --- Keyboard, Mouse, and Touch Handlers ---
+            document.addEventListener('keydown', e => {
+                switch (e.key) {
+                    case 'ArrowUp': handleInput('up'); break;
+                    case 'ArrowDown': handleInput('down'); break;
+                    case 'ArrowLeft': handleInput('left'); break;
+                    case 'ArrowRight': handleInput('right'); break;
+                }
+            });
+
+            let startX = 0, startY = 0, isDown = false;
+
+            function startDrag(clientX, clientY) {
+                startX = clientX;
+                startY = clientY;
+                isDown = true;
+            }
+
+            function endDrag(clientX, clientY) {
+                if (!isDown) return;
+                isDown = false;
+
+                const dx = clientX - startX;
+                const dy = clientY - startY;
+
+                if (Math.max(Math.abs(dx), Math.abs(dy)) > 30) { // Swipe threshold
+                    if (Math.abs(dx) > Math.abs(dy)) {
+                        handleInput(dx > 0 ? 'right' : 'left');
+                    } else {
+                        handleInput(dy > 0 ? 'down' : 'up');
                     }
                 }
             }
 
+            canvas.addEventListener('mousedown', e => startDrag(e.clientX, e.clientY));
+            canvas.addEventListener('mouseup', e => endDrag(e.clientX, e.clientY));
+            canvas.addEventListener('mouseleave', () => isDown = false);
+            
+            canvas.addEventListener('touchstart', e => {
+                e.preventDefault();
+                startDrag(e.touches[0].clientX, e.touches[0].clientY);
+            }, { passive: false });
+
+            canvas.addEventListener('touchend', e => {
+                e.preventDefault();
+                endDrag(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
+            }, { passive: false });
+
+
             // --- Event Listeners ---
-            document.addEventListener('keydown', handleMove);
             newGameBtn.addEventListener('click', setupGame);
             tryAgainBtn.addEventListener('click', setupGame);
             window.addEventListener('resize', resizeCanvas);
@@ -524,6 +443,3 @@
     </script>
 </body>
 </html>
-
-
-
