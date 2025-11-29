@@ -219,6 +219,16 @@
             line-height: 1.6;
         }
 
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+
+        .tile-merged {
+            animation: pulse 0.3s ease-in-out;
+        }
+
         #help-close-btn {
             background-color: #8b7969;
             color: white;
@@ -323,6 +333,7 @@
             let score = 0;
             let isMoving = false;
             let newTile = null; // For pop-in animation
+            let mergedTiles = [];
 
             function toggleMute() {
                 isMuted = !isMuted;
@@ -413,7 +424,8 @@
                         if (level > 0) {
                             const tile = TILE_DATA[level - 1];
                             if (tile) {
-                                const scale = (newTile && newTile.r === r && newTile.c === c) ? newTile.scale : 1;
+                                const isMerged = mergedTiles.some(t => t.r === r && t.c === c);
+                                const scale = (newTile && newTile.r === r && newTile.c === c) ? newTile.scale : (isMerged ? 1.2 : 1);
                                 const fontSize = cellSize * 0.6 * scale;
                                 const xPos = x + cellSize / 2;
                                 const yPos = y + cellSize / 2;
@@ -421,7 +433,15 @@
                                 ctx.font = `${fontSize}px sans-serif`;
                                 ctx.textAlign = 'center';
                                 ctx.textBaseline = 'middle';
-                                ctx.fillText(tile.emoji, xPos, yPos);
+
+                                if (isMerged) {
+                                    ctx.save();
+                                    ctx.fillStyle = '#f7f2ed';
+                                    ctx.fillText(tile.emoji, xPos, yPos);
+                                    ctx.restore();
+                                } else {
+                                    ctx.fillText(tile.emoji, xPos, yPos);
+                                }
                             }
                         }
                     }
@@ -473,6 +493,7 @@
                 let newLine = [];
                 let scoreIncrease = 0;
                 let merged = false;
+                let mergedIndices = [];
                 for (let i = 0; i < filtered.length; i++) {
                     if (i + 1 < filtered.length && filtered[i] === filtered[i + 1]) {
                         const newLevel = filtered[i] + 1;
@@ -480,6 +501,7 @@
                              newLine.push(newLevel);
                              scoreIncrease += TILE_DATA[newLevel - 1].score;
                              merged = true;
+                             mergedIndices.push(newLine.length - 1);
                         } else {
                             newLine.push(filtered[i]); // Max level, don't merge
                         }
@@ -495,13 +517,14 @@
                 while (newLine.length < SIZE) {
                     newLine.push(0);
                 }
-                return { newLine, scoreIncrease };
+                return { newLine, scoreIncrease, mergedIndices };
             }
 
             function moveGrid(direction) {
                 let originalGrid = JSON.stringify(grid);
                 let scoreIncrease = 0;
                 let newGrid = grid.map(row => [...row]); // Deep copy
+                mergedTiles = [];
 
                 if (direction === 'left' || direction === 'right') {
                     for (let r = 0; r < SIZE; r++) {
@@ -510,6 +533,9 @@
                         let result = processLine(row);
                         scoreIncrease += result.scoreIncrease;
                         newGrid[r] = direction === 'right' ? result.newLine.reverse() : result.newLine;
+                        result.mergedIndices.forEach(c => {
+                            mergedTiles.push({r, c: direction === 'right' ? SIZE - 1 - c : c});
+                        });
                     }
                 } else { // 'up' or 'down'
                     newGrid = transpose(newGrid);
@@ -519,6 +545,9 @@
                         let result = processLine(row);
                         scoreIncrease += result.scoreIncrease;
                         newGrid[r] = direction === 'down' ? result.newLine.reverse() : result.newLine;
+                        result.mergedIndices.forEach(c => {
+                            mergedTiles.push({r: direction === 'down' ? SIZE - 1 - c : c, c: r});
+                        });
                     }
                     newGrid = transpose(newGrid);
                 }
@@ -573,6 +602,7 @@
                             requestAnimationFrame(animate);
                         } else {
                             newTile = null; // Animation finished
+                            mergedTiles = []; // Clear merged tiles after animation
                             if (isGameOver()) showGameOver();
                             isMoving = false;
                         }
