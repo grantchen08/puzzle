@@ -76,7 +76,7 @@
             font-weight: 700;
         }
 
-        #new-game-btn, #help-btn {
+        #new-game-btn, #help-btn, #mute-btn {
             background-color: #8b7969;
             color: white;
             border: none;
@@ -88,7 +88,7 @@
             transition: background-color 0.2s ease;
         }
 
-        #new-game-btn:hover, #help-btn:hover {
+        #new-game-btn:hover, #help-btn:hover, #mute-btn:hover {
             background-color: #9c8a7a;
         }
 
@@ -257,6 +257,7 @@
                     <div class="score-title">SCORE</div>
                     <div id="score">0</div>
                 </div>
+                <button id="mute-btn">🔊</button>
                 <button id="help-btn">How to Play</button>
                 <button id="new-game-btn">New Game</button>
             </div>
@@ -313,30 +314,39 @@
             const helpCloseBtn = document.getElementById('help-close-btn');
             const mergeSound = document.getElementById('merge-sound');
             const popSound = document.getElementById('pop-sound');
+            const muteBtn = document.getElementById('mute-btn');
             
             let audioUnlocked = false;
+            let isMuted = false;
             const SIZE = 4;
             let grid = [];
             let score = 0;
             let isMoving = false;
             let newTile = null; // For pop-in animation
 
+            function toggleMute() {
+                isMuted = !isMuted;
+                muteBtn.textContent = isMuted ? '🔇' : '🔊';
+            }
+
             function unlockAudio() {
                 if (audioUnlocked) return;
                 
-                const popPromise = popSound.play();
-                if (popPromise !== undefined) {
-                    popPromise.then(() => {
-                        popSound.pause();
-                        popSound.currentTime = 0;
-                    }).catch(error => {});
-                }
-                const mergePromise = mergeSound.play();
-                if (mergePromise !== undefined) {
-                    mergePromise.then(() => {
-                        mergeSound.pause();
-                        mergeSound.currentTime = 0;
-                    }).catch(error => {});
+                if (!isMuted) {
+                    const popPromise = popSound.play();
+                    if (popPromise !== undefined) {
+                        popPromise.then(() => {
+                            popSound.pause();
+                            popSound.currentTime = 0;
+                        }).catch(error => {});
+                    }
+                    const mergePromise = mergeSound.play();
+                    if (mergePromise !== undefined) {
+                        mergePromise.then(() => {
+                            mergeSound.pause();
+                            mergeSound.currentTime = 0;
+                        }).catch(error => {});
+                    }
                 }
                 audioUnlocked = true;
             }
@@ -451,7 +461,7 @@
                     const { r, c } = emptyCells[Math.floor(Math.random() * emptyCells.length)];
                     grid[r][c] = 1; // Always spawn a Level 1 tile (Tent)
                     newTile = { r, c, scale: 0 };
-                    if (audioUnlocked && !silent) {
+                    if (audioUnlocked && !isMuted && !silent) {
                         popSound.currentTime = 0;
                         popSound.play();
                     }
@@ -478,7 +488,7 @@
                         newLine.push(filtered[i]);
                     }
                 }
-                if (merged && audioUnlocked) {
+                if (merged && audioUnlocked && !isMuted) {
                     mergeSound.currentTime = 0;
                     mergeSound.play();
                 }
@@ -634,6 +644,7 @@
             });
             helpBtn.addEventListener('click', showHelp);
             helpCloseBtn.addEventListener('click', hideHelp);
+            muteBtn.addEventListener('click', toggleMute);
             window.addEventListener('resize', resizeCanvas);
 
             // --- Start the game ---
