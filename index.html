@@ -76,7 +76,7 @@
             font-weight: 700;
         }
 
-        #new-game-btn {
+        #new-game-btn, #help-btn {
             background-color: #8b7969;
             color: white;
             border: none;
@@ -88,7 +88,7 @@
             transition: background-color 0.2s ease;
         }
 
-        #new-game-btn:hover {
+        #new-game-btn:hover, #help-btn:hover {
             background-color: #9c8a7a;
         }
 
@@ -148,16 +148,74 @@
             cursor: pointer;
             transition: background-color 0.2s ease;
         }
-        #try-again-btn:hover {
+        #try-again-btn:hover, #help-close-btn:hover {
             background-color: #9c8a7a;
+        }
+
+        /* Help Modal Styles */
+        #help-modal {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(247, 242, 237, 0.95);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: left;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease-in-out;
+            z-index: 200;
+            border-radius: 6px;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        #help-modal.show {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        #help-modal h2 {
+            font-size: 2rem;
+            margin-top: 0;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        #help-modal ul {
+            padding-left: 20px;
+            margin: 0 0 15px 0;
+        }
+
+        #help-modal li {
+            margin-bottom: 10px;
+        }
+
+        #help-close-btn {
+            background-color: #8b7969;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            margin-top: 15px;
         }
 
         @media (max-width: 480px) {
             h1 { font-size: 2rem; }
             .score-container { padding: 5px 15px; }
             #score { font-size: 1.2rem; }
-            #new-game-btn, #try-again-btn { padding: 10px 15px; font-size: 0.9rem;}
+            #new-game-btn, #try-again-btn, #help-btn, #help-close-btn { padding: 10px 15px; font-size: 0.9rem;}
             #game-over-overlay h2 { font-size: 2.5rem; }
+            #help-modal h2 { font-size: 1.5rem; }
+            #help-modal ul { padding-left: 15px; }
         }
 
     </style>
@@ -172,6 +230,7 @@
                     <div class="score-title">SCORE</div>
                     <div id="score">0</div>
                 </div>
+                <button id="help-btn">How to Play</button>
                 <button id="new-game-btn">New Game</button>
             </div>
         </div>
@@ -180,6 +239,17 @@
             <div id="game-over-overlay">
                 <h2>Game Over!</h2>
                 <button id="try-again-btn">Try Again</button>
+            </div>
+            <div id="help-modal">
+                <h2>How to Play</h2>
+                <p>The goal is to get the highest score by merging tiles.</p>
+                <ul>
+                    <li>Use <strong>arrow keys</strong> or <strong>swipe</strong> to move all tiles.</li>
+                    <li>When two identical tiles touch, they <strong>merge</strong> into a new one.</li>
+                    <li>A new tile appears after every move.</li>
+                    <li>The game ends when the board is full and no moves are left.</li>
+                </ul>
+                <button id="help-close-btn">Got It!</button>
             </div>
         </div>
     </div>
@@ -192,12 +262,23 @@
             const newGameBtn = document.getElementById('new-game-btn');
             const tryAgainBtn = document.getElementById('try-again-btn');
             const gameOverOverlay = document.getElementById('game-over-overlay');
+            const helpBtn = document.getElementById('help-btn');
+            const helpModal = document.getElementById('help-modal');
+            const helpCloseBtn = document.getElementById('help-close-btn');
             
             const SIZE = 4;
             let grid = [];
             let score = 0;
             let isMoving = false;
             let newTile = null; // For pop-in animation
+            
+            function showHelp() {
+                helpModal.classList.add('show');
+            }
+
+            function hideHelp() {
+                helpModal.classList.remove('show');
+            }
 
             const TILE_DATA = [
                 { emoji: '⛺', score: 2 },   // Level 1
@@ -225,6 +306,7 @@
                 score = 0;
                 updateScore(0);
                 gameOverOverlay.classList.remove('show');
+                hideHelp();
                 newTile = null;
                 addRandomTile();
                 addRandomTile();
@@ -461,6 +543,8 @@
             // --- Event Listeners ---
             newGameBtn.addEventListener('click', setupGame);
             tryAgainBtn.addEventListener('click', setupGame);
+            helpBtn.addEventListener('click', showHelp);
+            helpCloseBtn.addEventListener('click', hideHelp);
             window.addEventListener('resize', resizeCanvas);
 
             // --- Start the game ---
