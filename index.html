@@ -297,6 +297,9 @@
         </div>
     </div>
 
+    <audio id="merge-sound" src="sounds/merge.wav" preload="auto"></audio>
+    <audio id="pop-sound" src="sounds/pop.wav" preload="auto"></audio>
+
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const canvas = document.getElementById('game-canvas');
@@ -308,6 +311,8 @@
             const helpBtn = document.getElementById('help-btn');
             const helpModal = document.getElementById('help-modal');
             const helpCloseBtn = document.getElementById('help-close-btn');
+            const mergeSound = document.getElementById('merge-sound');
+            const popSound = document.getElementById('pop-sound');
             
             const SIZE = 4;
             let grid = [];
@@ -425,6 +430,8 @@
                     const { r, c } = emptyCells[Math.floor(Math.random() * emptyCells.length)];
                     grid[r][c] = 1; // Always spawn a Level 1 tile (Tent)
                     newTile = { r, c, scale: 0 };
+                    popSound.currentTime = 0;
+                    popSound.play();
                 }
             }
 
@@ -432,12 +439,14 @@
                 let filtered = line.filter(val => val > 0);
                 let newLine = [];
                 let scoreIncrease = 0;
+                let merged = false;
                 for (let i = 0; i < filtered.length; i++) {
                     if (i + 1 < filtered.length && filtered[i] === filtered[i + 1]) {
                         const newLevel = filtered[i] + 1;
                         if (newLevel <= TILE_DATA.length) {
                              newLine.push(newLevel);
                              scoreIncrease += TILE_DATA[newLevel - 1].score;
+                             merged = true;
                         } else {
                             newLine.push(filtered[i]); // Max level, don't merge
                         }
@@ -445,6 +454,10 @@
                     } else {
                         newLine.push(filtered[i]);
                     }
+                }
+                if (merged) {
+                    mergeSound.currentTime = 0;
+                    mergeSound.play();
                 }
                 while (newLine.length < SIZE) {
                     newLine.push(0);
