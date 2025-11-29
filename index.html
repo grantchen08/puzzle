@@ -314,11 +314,32 @@
             const mergeSound = document.getElementById('merge-sound');
             const popSound = document.getElementById('pop-sound');
             
+            let audioUnlocked = false;
             const SIZE = 4;
             let grid = [];
             let score = 0;
             let isMoving = false;
             let newTile = null; // For pop-in animation
+
+            function unlockAudio() {
+                if (audioUnlocked) return;
+                
+                const popPromise = popSound.play();
+                if (popPromise !== undefined) {
+                    popPromise.then(() => {
+                        popSound.pause();
+                        popSound.currentTime = 0;
+                    }).catch(error => {});
+                }
+                const mergePromise = mergeSound.play();
+                if (mergePromise !== undefined) {
+                    mergePromise.then(() => {
+                        mergeSound.pause();
+                        mergeSound.currentTime = 0;
+                    }).catch(error => {});
+                }
+                audioUnlocked = true;
+            }
             
             function showHelp() {
                 helpModal.classList.add('show');
@@ -356,8 +377,8 @@
                 gameOverOverlay.classList.remove('show');
                 hideHelp();
                 newTile = null;
-                addRandomTile();
-                addRandomTile();
+                addRandomTile(true);
+                addRandomTile(true);
                 resizeCanvas();
             }
 
@@ -416,7 +437,7 @@
                 scoreDisplay.textContent = score;
             }
 
-            function addRandomTile() {
+            function addRandomTile(silent = false) {
                 const emptyCells = [];
                 for (let r = 0; r < SIZE; r++) {
                     for (let c = 0; c < SIZE; c++) {
@@ -430,8 +451,10 @@
                     const { r, c } = emptyCells[Math.floor(Math.random() * emptyCells.length)];
                     grid[r][c] = 1; // Always spawn a Level 1 tile (Tent)
                     newTile = { r, c, scale: 0 };
-                    popSound.currentTime = 0;
-                    popSound.play();
+                    if (audioUnlocked && !silent) {
+                        popSound.currentTime = 0;
+                        popSound.play();
+                    }
                 }
             }
 
@@ -455,7 +478,7 @@
                         newLine.push(filtered[i]);
                     }
                 }
-                if (merged) {
+                if (merged && audioUnlocked) {
                     mergeSound.currentTime = 0;
                     mergeSound.play();
                 }
@@ -516,6 +539,7 @@
             
             function handleInput(direction) {
                  if (isMoving) return;
+                 unlockAudio();
                  const moved = moveGrid(direction);
                  if (moved) {
                     isMoving = true;
@@ -549,6 +573,7 @@
 
             // --- Keyboard, Mouse, and Touch Handlers ---
             document.addEventListener('keydown', e => {
+                unlockAudio();
                 switch (e.key) {
                     case 'ArrowUp': handleInput('up'); break;
                     case 'ArrowDown': handleInput('down'); break;
@@ -560,6 +585,7 @@
             let startX = 0, startY = 0, isDown = false;
 
             function startDrag(clientX, clientY) {
+                unlockAudio();
                 startX = clientX;
                 startY = clientY;
                 isDown = true;
@@ -587,6 +613,7 @@
             
             canvas.addEventListener('touchstart', e => {
                 e.preventDefault();
+                unlockAudio();
                 startDrag(e.touches[0].clientX, e.touches[0].clientY);
             }, { passive: false });
 
@@ -597,8 +624,14 @@
 
 
             // --- Event Listeners ---
-            newGameBtn.addEventListener('click', setupGame);
-            tryAgainBtn.addEventListener('click', setupGame);
+            newGameBtn.addEventListener('click', () => {
+                unlockAudio();
+                setupGame();
+            });
+            tryAgainBtn.addEventListener('click', () => {
+                unlockAudio();
+                setupGame();
+            });
             helpBtn.addEventListener('click', showHelp);
             helpCloseBtn.addEventListener('click', hideHelp);
             window.addEventListener('resize', resizeCanvas);
