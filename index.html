@@ -219,16 +219,6 @@
             line-height: 1.6;
         }
 
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.2); }
-            100% { transform: scale(1); }
-        }
-
-        .tile-merged {
-            animation: pulse 0.3s ease-in-out;
-        }
-
         #help-close-btn {
             background-color: #8b7969;
             color: white;
@@ -424,8 +414,15 @@
                         if (level > 0) {
                             const tile = TILE_DATA[level - 1];
                             if (tile) {
-                                const isMerged = mergedTiles.some(t => t.r === r && t.c === c);
-                                const scale = (newTile && newTile.r === r && newTile.c === c) ? newTile.scale : (isMerged ? 1.2 : 1);
+                                let scale = 1;
+                                if (newTile && newTile.r === r && newTile.c === c) {
+                                    scale = newTile.scale;
+                                } else {
+                                    const merged = mergedTiles.find(t => t.r === r && t.c === c);
+                                    if (merged) {
+                                        scale = merged.scale;
+                                    }
+                                }
                                 const fontSize = cellSize * 0.6 * scale;
                                 const xPos = x + cellSize / 2;
                                 const yPos = y + cellSize / 2;
@@ -433,15 +430,7 @@
                                 ctx.font = `${fontSize}px sans-serif`;
                                 ctx.textAlign = 'center';
                                 ctx.textBaseline = 'middle';
-
-                                if (isMerged) {
-                                    ctx.save();
-                                    ctx.fillStyle = '#f7f2ed';
-                                    ctx.fillText(tile.emoji, xPos, yPos);
-                                    ctx.restore();
-                                } else {
-                                    ctx.fillText(tile.emoji, xPos, yPos);
-                                }
+                                ctx.fillText(tile.emoji, xPos, yPos);
                             }
                         }
                     }
@@ -590,11 +579,15 @@
                     function animate(timestamp) {
                         if (!startTime) startTime = timestamp;
                         const progress = timestamp - startTime;
-                        const scale = Math.min(progress / animationDuration, 1);
-
+                        
                         if (newTile) {
-                            newTile.scale = scale;
+                            newTile.scale = Math.min(progress / animationDuration, 1);
                         }
+
+                        mergedTiles.forEach(tile => {
+                            const mergeProgress = Math.min(progress / animationDuration, 1);
+                            tile.scale = 1 + 0.2 * Math.sin(mergeProgress * Math.PI);
+                        });
 
                         drawBoard();
 
