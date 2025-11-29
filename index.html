@@ -155,23 +155,30 @@
         /* Help Modal Styles */
         #help-modal {
             position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: rgba(247, 242, 237, 0.95);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90%;
+            max-width: 480px;
+            max-height: 80vh;
+            background-color: rgba(247, 242, 237, 0.98);
             display: flex;
             flex-direction: column;
-            justify-content: center;
-            align-items: center;
             text-align: left;
             opacity: 0;
             pointer-events: none;
             transition: opacity 0.3s ease-in-out;
             z-index: 200;
-            border-radius: 6px;
-            padding: 20px;
+            border-radius: 8px;
+            padding: 25px;
             box-sizing: border-box;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+
+        #help-modal-content {
+            overflow-y: auto;
+            padding-right: 15px; /* for scrollbar */
+            margin-right: -15px;
         }
 
         #help-modal.show {
@@ -182,46 +189,48 @@
         #help-modal h2 {
             font-size: 2rem;
             margin-top: 0;
-            margin-bottom: 15px;
+            margin-bottom: 20px;
             text-align: center;
         }
 
         #help-modal ul {
-            padding-left: 20px;
-            margin: 0 0 15px 0;
+            padding-left: 25px;
+            margin: 0 0 20px 0;
         }
 
         #help-modal li {
-            margin-bottom: 10px;
+            margin-bottom: 12px;
+            line-height: 1.4;
         }
 
         #tile-progression {
-            margin-top: 15px;
+            margin-top: 20px;
             text-align: center;
         }
 
         #tile-progression h3 {
-            font-size: 1.2rem;
-            margin-bottom: 10px;
+            font-size: 1.3rem;
+            margin-bottom: 15px;
         }
 
         #tile-progression p {
             margin: 0;
-            font-size: 0.9rem;
-            line-height: 1.5;
+            font-size: 1rem;
+            line-height: 1.6;
         }
 
         #help-close-btn {
             background-color: #8b7969;
             color: white;
             border: none;
-            padding: 12px 20px;
+            padding: 14px 22px;
             border-radius: 6px;
             font-size: 1rem;
             font-weight: 700;
             cursor: pointer;
             transition: background-color 0.2s ease;
-            margin-top: 15px;
+            margin-top: 25px;
+            align-self: center;
         }
 
         @media (max-width: 480px) {
@@ -230,8 +239,10 @@
             #score { font-size: 1.2rem; }
             #new-game-btn, #try-again-btn, #help-btn, #help-close-btn { padding: 10px 15px; font-size: 0.9rem;}
             #game-over-overlay h2 { font-size: 2.5rem; }
-            #help-modal h2 { font-size: 1.5rem; }
-            #help-modal ul { padding-left: 15px; }
+            #help-modal h2 { font-size: 1.8rem; }
+            #help-modal ul { padding-left: 20px; }
+            #tile-progression h3 { font-size: 1.2rem; }
+            #tile-progression p { font-size: 0.9rem; }
         }
 
     </style>
@@ -257,27 +268,29 @@
                 <button id="try-again-btn">Try Again</button>
             </div>
             <div id="help-modal">
-                <h2>How to Play</h2>
-                <p>The goal is to get the highest score by merging tiles.</p>
-                <ul>
-                    <li>Use <strong>arrow keys</strong> or <strong>swipe</strong> to move all tiles.</li>
-                    <li>When two identical tiles touch, they <strong>merge</strong> into a new one.</li>
-                    <li>A new tile appears after every move.</li>
-                    <li>The game ends when the board is full and no moves are left.</li>
-                </ul>
-                <div id="tile-progression">
-                    <h3>Tile Progression</h3>
-                    <p>
-                        ⛺ + ⛺ = 🛖<br>
-                        🛖 + 🛖 = 🏠<br>
-                        🏠 + 🏠 = 🏡<br>
-                        🏡 + 🏡 = 🏢<br>
-                        🏢 + 🏢 = 🏙️<br>
-                        🏙️ + 🏙️ = 🏰<br>
-                        🏰 + 🏰 = 🏛️<br>
-                        🏛️ + 🏛️ = 🗼<br>
-                        🗼 + 🗼 = 🚀<br>
-                    </p>
+                <div id="help-modal-content">
+                    <h2>How to Play</h2>
+                    <p>The goal is to get the highest score by merging tiles.</p>
+                    <ul>
+                        <li>Use <strong>arrow keys</strong> or <strong>swipe</strong> to move all tiles.</li>
+                        <li>When two identical tiles touch, they <strong>merge</strong> into a new one.</li>
+                        <li>A new tile appears after every move.</li>
+                        <li>The game ends when the board is full and no moves are left.</li>
+                    </ul>
+                    <div id="tile-progression">
+                        <h3>Tile Progression</h3>
+                        <p>
+                            ⛺ + ⛺ = 🛖<br>
+                            🛖 + 🛖 = 🏠<br>
+                            🏠 + 🏠 = 🏡<br>
+                            🏡 + 🏡 = 🏢<br>
+                            🏢 + 🏢 = 🏙️<br>
+                            🏙️ + 🏙️ = 🏰<br>
+                            🏰 + 🏰 = 🏛️<br>
+                            🏛️ + 🏛️ = 🗼<br>
+                            🗼 + 🗼 = 🚀<br>
+                        </p>
+                    </div>
                 </div>
                 <button id="help-close-btn">Got It!</button>
             </div>
