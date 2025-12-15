@@ -71,11 +71,24 @@
             text-transform: uppercase;
         }
 
-        #score {
+        #score, #best-score {
             font-size: 1.5rem;
             font-weight: 700;
             display: inline-block;
             transition: transform 0.1s ease-out;
+        }
+
+        .best-score {
+            background-color: #d4a853 !important;
+        }
+
+        .new-record {
+            animation: pulse-gold 0.5s ease-in-out 3;
+        }
+
+        @keyframes pulse-gold {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
         }
 
         #new-game-btn, #help-btn, #mute-btn {
@@ -136,7 +149,15 @@
 
         #game-over-overlay h2 {
             font-size: 3rem;
+            margin: 0 0 10px 0;
+        }
+
+        #new-record-msg {
+            font-size: 1.2rem;
+            color: #d4a853;
+            font-weight: 700;
             margin: 0 0 20px 0;
+            min-height: 1.5em;
         }
         
         #try-again-btn {
@@ -259,6 +280,10 @@
                     <div class="score-title">SCORE</div>
                     <div id="score">0</div>
                 </div>
+                <div class="score-container best-score">
+                    <div class="score-title">BEST</div>
+                    <div id="best-score">0</div>
+                </div>
                 <button id="mute-btn">🔊</button>
                 <button id="help-btn">❓</button>
                 <button id="new-game-btn">New Game</button>
@@ -268,6 +293,7 @@
             <canvas id="game-canvas"></canvas>
             <div id="game-over-overlay">
                 <h2>Game Over!</h2>
+                <p id="new-record-msg"></p>
                 <button id="try-again-btn">Try Again</button>
             </div>
             <div id="help-modal">
@@ -308,6 +334,8 @@
             const canvas = document.getElementById('game-canvas');
             const ctx = canvas.getContext('2d');
             const scoreDisplay = document.getElementById('score');
+            const bestScoreDisplay = document.getElementById('best-score');
+            const newRecordMsg = document.getElementById('new-record-msg');
             const newGameBtn = document.getElementById('new-game-btn');
             const tryAgainBtn = document.getElementById('try-again-btn');
             const gameOverOverlay = document.getElementById('game-over-overlay');
@@ -318,11 +346,14 @@
             const popSound = document.getElementById('pop-sound');
             const muteBtn = document.getElementById('mute-btn');
             
+            const STORAGE_KEY = 'cityMerge_bestScore';
+            
             let audioUnlocked = false;
             let isMuted = false;
             const SIZE = 4;
             let grid = [];
             let score = 0;
+            let bestScore = 0;
             let displayScore = 0; // For animated score display
             let scoreAnimationId = null;
             let isMoving = false;
@@ -339,6 +370,22 @@
             function toggleMute() {
                 isMuted = !isMuted;
                 muteBtn.textContent = isMuted ? '🔇' : '🔊';
+            }
+
+            function loadBestScore() {
+                const saved = localStorage.getItem(STORAGE_KEY);
+                bestScore = saved ? parseInt(saved, 10) : 0;
+                bestScoreDisplay.textContent = bestScore;
+            }
+
+            function saveBestScore() {
+                if (score > bestScore) {
+                    bestScore = score;
+                    localStorage.setItem(STORAGE_KEY, bestScore);
+                    bestScoreDisplay.textContent = bestScore;
+                    return true; // New record!
+                }
+                return false;
             }
 
             function unlockAudio() {
@@ -413,7 +460,9 @@
                 score = 0;
                 displayScore = 0;
                 updateScoreDisplay();
+                loadBestScore();
                 gameOverOverlay.classList.remove('show');
+                newRecordMsg.textContent = '';
                 hideHelp();
                 newTile = null;
                 movingTiles = [];
@@ -673,6 +722,11 @@
                 score = newScore;
                 if (newScore !== oldScore) {
                     animateScore(newScore);
+                    // Update best score display in real-time if beaten
+                    if (score > bestScore) {
+                        bestScore = score;
+                        bestScoreDisplay.textContent = bestScore;
+                    }
                 }
             }
 
@@ -886,6 +940,16 @@
             }
 
             function showGameOver() {
+                const isNewRecord = saveBestScore();
+                if (isNewRecord) {
+                    newRecordMsg.textContent = '🎉 New Record! 🎉';
+                    document.querySelector('.best-score').classList.add('new-record');
+                    setTimeout(() => {
+                        document.querySelector('.best-score').classList.remove('new-record');
+                    }, 1500);
+                } else {
+                    newRecordMsg.textContent = '';
+                }
                 gameOverOverlay.classList.add('show');
             }
             
