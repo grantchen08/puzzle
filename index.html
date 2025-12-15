@@ -74,6 +74,8 @@
         #score {
             font-size: 1.5rem;
             font-weight: 700;
+            display: inline-block;
+            transition: transform 0.1s ease-out;
         }
 
         #new-game-btn, #help-btn, #mute-btn {
@@ -321,9 +323,18 @@
             const SIZE = 4;
             let grid = [];
             let score = 0;
+            let displayScore = 0; // For animated score display
+            let scoreAnimationId = null;
             let isMoving = false;
             let newTile = null; // For pop-in animation
             let mergedTiles = [];
+            let movingTiles = []; // For slide animations
+            let particles = []; // For particle effects
+
+            // Animation timing
+            const SLIDE_DURATION = 120; // ms - fast slide
+            const POP_DURATION = 150; // ms - new tile pop-in
+            const MERGE_DURATION = 200; // ms - merge pulse
 
             function toggleMute() {
                 isMuted = !isMuted;
@@ -361,17 +372,33 @@
             }
 
             const TILE_DATA = [
-                { emoji: '⛺', score: 2 },   // Level 1
-                { emoji: '🛖', score: 4 },   // Level 2
-                { emoji: '🏠', score: 8 },   // Level 3
-                { emoji: '🏡', score: 16 },  // Level 4
-                { emoji: '🏢', score: 32 },  // Level 5
-                { emoji: '🏙️', score: 64 },  // Level 6
-                { emoji: '🏰', score: 128 }, // Level 7
-                { emoji: '🏛️', score: 256 }, // Level 8
-                { emoji: '🗼', score: 512 }, // Level 9
-                { emoji: '🚀', score: 1024 } // Level 10 - SciFi!
+                { emoji: '⛺', score: 2, color: '#eee4da' },   // Level 1
+                { emoji: '🛖', score: 4, color: '#ede0c8' },   // Level 2
+                { emoji: '🏠', score: 8, color: '#f2b179' },   // Level 3
+                { emoji: '🏡', score: 16, color: '#f59563' },  // Level 4
+                { emoji: '🏢', score: 32, color: '#f67c5f' },  // Level 5
+                { emoji: '🏙️', score: 64, color: '#f65e3b' },  // Level 6
+                { emoji: '🏰', score: 128, color: '#edcf72' }, // Level 7
+                { emoji: '🏛️', score: 256, color: '#edcc61' }, // Level 8
+                { emoji: '🗼', score: 512, color: '#edc850' }, // Level 9
+                { emoji: '🚀', score: 1024, color: '#edc53f' } // Level 10 - SciFi!
             ];
+
+            // Easing functions for smooth animations
+            function easeOutQuad(t) {
+                return t * (2 - t);
+            }
+
+            function easeOutBack(t) {
+                const c1 = 1.70158;
+                const c3 = c1 + 1;
+                return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
+            }
+
+            function easeOutElastic(t) {
+                const c4 = (2 * Math.PI) / 3;
+                return t === 0 ? 0 : t === 1 ? 1 : Math.pow(2, -10 * t) * Math.sin((t * 10 - 0.75) * c4) + 1;
+            }
 
             function resizeCanvas() {
                 const container = canvas.parentElement;
@@ -384,23 +411,39 @@
             function setupGame() {
                 grid = Array.from({ length: SIZE }, () => Array(SIZE).fill(0));
                 score = 0;
-                updateScore(0);
+                displayScore = 0;
+                updateScoreDisplay();
                 gameOverOverlay.classList.remove('show');
                 hideHelp();
                 newTile = null;
+                movingTiles = [];
+                mergedTiles = [];
+                particles = [];
                 addRandomTile(true);
                 addRandomTile(true);
                 resizeCanvas();
             }
 
-            function drawBoard() {
+            function getCellPosition(r, c) {
+                const gap = canvas.width * 0.03;
+                const cellSize = (canvas.width - (SIZE + 1) * gap) / SIZE;
+                return {
+                    x: c * (cellSize + gap) + gap,
+                    y: r * (cellSize + gap) + gap,
+                    size: cellSize
+                };
+            }
+
+            function drawBoard(animationProgress = null) {
                 const gap = canvas.width * 0.03;
                 const cellSize = (canvas.width - (SIZE + 1) * gap) / SIZE;
                 const cornerRadius = cellSize * 0.05;
 
+                // Draw board background
                 ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--board-bg');
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+                // Draw empty cells
                 for (let r = 0; r < SIZE; r++) {
                     for (let c = 0; c < SIZE; c++) {
                         const x = c * (cellSize + gap) + gap;
@@ -409,32 +452,80 @@
                         ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--cell-bg');
                         drawRoundedRect(ctx, x, y, cellSize, cellSize, cornerRadius);
                         ctx.fill();
+                    }
+                }
 
-                        const level = grid[r][c];
-                        if (level > 0) {
-                            const tile = TILE_DATA[level - 1];
-                            if (tile) {
+                // Draw moving tiles (during slide animation)
+                movingTiles.forEach(tile => {
+                    const fromPos = getCellPosition(tile.fromR, tile.fromC);
+                    const toPos = getCellPosition(tile.toR, tile.toC);
+                    const progress = easeOutQuad(tile.progress);
+                    
+                    const x = fromPos.x + (toPos.x - fromPos.x) * progress;
+                    const y = fromPos.y + (toPos.y - fromPos.y) * progress;
+                    
+                    drawTile(tile.level, x, y, cellSize, 1);
+                });
+
+                // Draw static tiles (not moving)
+                if (movingTiles.length === 0) {
+                    for (let r = 0; r < SIZE; r++) {
+                        for (let c = 0; c < SIZE; c++) {
+                            const level = grid[r][c];
+                            if (level > 0) {
+                                const pos = getCellPosition(r, c);
                                 let scale = 1;
+                                
+                                // New tile pop-in animation
                                 if (newTile && newTile.r === r && newTile.c === c) {
-                                    scale = newTile.scale;
+                                    scale = easeOutBack(newTile.scale);
                                 } else {
+                                    // Merge pulse animation
                                     const merged = mergedTiles.find(t => t.r === r && t.c === c);
                                     if (merged) {
                                         scale = merged.scale;
                                     }
                                 }
-                                const fontSize = cellSize * 0.6 * scale;
-                                const xPos = x + cellSize / 2;
-                                const yPos = y + cellSize / 2;
-
-                                ctx.font = `${fontSize}px sans-serif`;
-                                ctx.textAlign = 'center';
-                                ctx.textBaseline = 'middle';
-                                ctx.fillText(tile.emoji, xPos, yPos);
+                                
+                                drawTile(level, pos.x, pos.y, cellSize, scale);
                             }
                         }
                     }
                 }
+
+                // Draw particles
+                drawParticles();
+            }
+
+            function drawTile(level, x, y, cellSize, scale) {
+                const tile = TILE_DATA[level - 1];
+                if (!tile) return;
+
+                const cornerRadius = cellSize * 0.05;
+                const centerX = x + cellSize / 2;
+                const centerY = y + cellSize / 2;
+                const scaledSize = cellSize * scale;
+                const scaledX = centerX - scaledSize / 2;
+                const scaledY = centerY - scaledSize / 2;
+
+                // Draw tile background with subtle shadow for depth
+                ctx.save();
+                if (scale > 1) {
+                    ctx.shadowColor = 'rgba(0, 0, 0, 0.2)';
+                    ctx.shadowBlur = 10 * (scale - 1) * 5;
+                    ctx.shadowOffsetY = 3 * (scale - 1) * 5;
+                }
+                ctx.fillStyle = tile.color;
+                drawRoundedRect(ctx, scaledX, scaledY, scaledSize, scaledSize, cornerRadius * scale);
+                ctx.fill();
+                ctx.restore();
+
+                // Draw emoji
+                const fontSize = cellSize * 0.6 * scale;
+                ctx.font = `${fontSize}px sans-serif`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(tile.emoji, centerX, centerY);
             }
             
             function drawRoundedRect(ctx, x, y, width, height, radius) {
@@ -451,9 +542,138 @@
                 ctx.closePath();
             }
 
+            // Particle system for merge effects
+            function createMergeParticles(r, c, level) {
+                const pos = getCellPosition(r, c);
+                const centerX = pos.x + pos.size / 2;
+                const centerY = pos.y + pos.size / 2;
+                const tile = TILE_DATA[level - 1];
+                const color = tile ? tile.color : '#f2b179';
+                
+                // Create burst of particles
+                const particleCount = 8 + level * 2; // More particles for higher levels
+                for (let i = 0; i < particleCount; i++) {
+                    const angle = (Math.PI * 2 * i) / particleCount + Math.random() * 0.3;
+                    const speed = 2 + Math.random() * 3 + level * 0.5;
+                    const size = 4 + Math.random() * 4 + level * 0.5;
+                    
+                    particles.push({
+                        x: centerX,
+                        y: centerY,
+                        vx: Math.cos(angle) * speed,
+                        vy: Math.sin(angle) * speed,
+                        size: size,
+                        color: color,
+                        alpha: 1,
+                        decay: 0.02 + Math.random() * 0.02,
+                        type: 'circle'
+                    });
+                }
+
+                // Add some sparkle particles
+                for (let i = 0; i < 4; i++) {
+                    const angle = Math.random() * Math.PI * 2;
+                    const distance = Math.random() * pos.size * 0.3;
+                    particles.push({
+                        x: centerX + Math.cos(angle) * distance,
+                        y: centerY + Math.sin(angle) * distance,
+                        vx: (Math.random() - 0.5) * 2,
+                        vy: -1 - Math.random() * 2,
+                        size: 3 + Math.random() * 3,
+                        color: '#ffffff',
+                        alpha: 1,
+                        decay: 0.03 + Math.random() * 0.02,
+                        type: 'star'
+                    });
+                }
+            }
+
+            function updateParticles() {
+                particles = particles.filter(p => {
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.vy += 0.1; // gravity
+                    p.alpha -= p.decay;
+                    p.size *= 0.98;
+                    return p.alpha > 0 && p.size > 0.5;
+                });
+            }
+
+            function drawParticles() {
+                particles.forEach(p => {
+                    ctx.save();
+                    ctx.globalAlpha = p.alpha;
+                    ctx.fillStyle = p.color;
+                    
+                    if (p.type === 'star') {
+                        // Draw a small star/sparkle
+                        ctx.beginPath();
+                        for (let i = 0; i < 4; i++) {
+                            const angle = (Math.PI / 2) * i;
+                            const outerX = p.x + Math.cos(angle) * p.size;
+                            const outerY = p.y + Math.sin(angle) * p.size;
+                            const innerX = p.x + Math.cos(angle + Math.PI / 4) * (p.size * 0.4);
+                            const innerY = p.y + Math.sin(angle + Math.PI / 4) * (p.size * 0.4);
+                            if (i === 0) ctx.moveTo(outerX, outerY);
+                            else ctx.lineTo(outerX, outerY);
+                            ctx.lineTo(innerX, innerY);
+                        }
+                        ctx.closePath();
+                        ctx.fill();
+                    } else {
+                        // Draw circle
+                        ctx.beginPath();
+                        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                    ctx.restore();
+                });
+            }
+
+            function updateScoreDisplay() {
+                scoreDisplay.textContent = Math.round(displayScore);
+            }
+
+            function animateScore(targetScore) {
+                if (scoreAnimationId) {
+                    cancelAnimationFrame(scoreAnimationId);
+                }
+                
+                const startScore = displayScore;
+                const diff = targetScore - startScore;
+                const duration = 300;
+                let startTime = null;
+
+                function animate(timestamp) {
+                    if (!startTime) startTime = timestamp;
+                    const progress = Math.min((timestamp - startTime) / duration, 1);
+                    const eased = easeOutQuad(progress);
+                    
+                    displayScore = startScore + diff * eased;
+                    updateScoreDisplay();
+
+                    // Add a little bounce effect to the score display
+                    const bounceScale = 1 + (1 - progress) * 0.1 * (diff / 100);
+                    scoreDisplay.style.transform = `scale(${Math.min(bounceScale, 1.3)})`;
+
+                    if (progress < 1) {
+                        scoreAnimationId = requestAnimationFrame(animate);
+                    } else {
+                        displayScore = targetScore;
+                        updateScoreDisplay();
+                        scoreDisplay.style.transform = 'scale(1)';
+                        scoreAnimationId = null;
+                    }
+                }
+                scoreAnimationId = requestAnimationFrame(animate);
+            }
+
             function updateScore(newScore) {
+                const oldScore = score;
                 score = newScore;
-                scoreDisplay.textContent = score;
+                if (newScore !== oldScore) {
+                    animateScore(newScore);
+                }
             }
 
             function addRandomTile(silent = false) {
@@ -477,77 +697,181 @@
                 }
             }
 
-            function processLine(line) {
-                let filtered = line.filter(val => val > 0);
+            // Process a line and track tile movements
+            function processLineWithMovement(line, rowOrCol, isRow, isReversed) {
+                const movements = [];
+                const merges = [];
+                
+                // Track original positions of non-zero tiles
+                const tiles = [];
+                for (let i = 0; i < line.length; i++) {
+                    if (line[i] > 0) {
+                        tiles.push({ value: line[i], originalIndex: i });
+                    }
+                }
+
+                // Process merges and calculate new positions
                 let newLine = [];
                 let scoreIncrease = 0;
                 let merged = false;
-                let mergedIndices = [];
-                for (let i = 0; i < filtered.length; i++) {
-                    if (i + 1 < filtered.length && filtered[i] === filtered[i + 1]) {
-                        const newLevel = filtered[i] + 1;
+                let i = 0;
+                
+                while (i < tiles.length) {
+                    if (i + 1 < tiles.length && tiles[i].value === tiles[i + 1].value) {
+                        const newLevel = tiles[i].value + 1;
                         if (newLevel <= TILE_DATA.length) {
-                             newLine.push(newLevel);
-                             scoreIncrease += TILE_DATA[newLevel - 1].score;
-                             merged = true;
-                             mergedIndices.push(newLine.length - 1);
+                            const newPos = newLine.length;
+                            
+                            // Both tiles move to the merge position
+                            movements.push({
+                                fromIndex: tiles[i].originalIndex,
+                                toIndex: newPos,
+                                level: tiles[i].value,
+                                merging: true
+                            });
+                            movements.push({
+                                fromIndex: tiles[i + 1].originalIndex,
+                                toIndex: newPos,
+                                level: tiles[i + 1].value,
+                                merging: true
+                            });
+                            
+                            merges.push({ index: newPos, level: newLevel });
+                            newLine.push(newLevel);
+                            scoreIncrease += TILE_DATA[newLevel - 1].score;
+                            merged = true;
+                            i += 2;
                         } else {
-                            newLine.push(filtered[i]); // Max level, don't merge
+                            movements.push({
+                                fromIndex: tiles[i].originalIndex,
+                                toIndex: newLine.length,
+                                level: tiles[i].value,
+                                merging: false
+                            });
+                            newLine.push(tiles[i].value);
+                            i++;
                         }
-                        i++;
                     } else {
-                        newLine.push(filtered[i]);
+                        movements.push({
+                            fromIndex: tiles[i].originalIndex,
+                            toIndex: newLine.length,
+                            level: tiles[i].value,
+                            merging: false
+                        });
+                        newLine.push(tiles[i].value);
+                        i++;
                     }
                 }
-                if (merged && audioUnlocked && !isMuted) {
-                    mergeSound.currentTime = 0;
-                    mergeSound.play();
-                }
+
                 while (newLine.length < SIZE) {
                     newLine.push(0);
                 }
-                return { newLine, scoreIncrease, mergedIndices };
+
+                // Convert movements to grid coordinates
+                const gridMovements = movements.map(m => {
+                    let fromR, fromC, toR, toC;
+                    let fromIdx = isReversed ? SIZE - 1 - m.fromIndex : m.fromIndex;
+                    let toIdx = isReversed ? SIZE - 1 - m.toIndex : m.toIndex;
+                    
+                    if (isRow) {
+                        fromR = toR = rowOrCol;
+                        fromC = fromIdx;
+                        toC = toIdx;
+                    } else {
+                        fromC = toC = rowOrCol;
+                        fromR = fromIdx;
+                        toR = toIdx;
+                    }
+                    
+                    return {
+                        fromR, fromC, toR, toC,
+                        level: m.level,
+                        merging: m.merging,
+                        progress: 0
+                    };
+                });
+
+                // Convert merges to grid coordinates
+                const gridMerges = merges.map(m => {
+                    let r, c;
+                    let idx = isReversed ? SIZE - 1 - m.index : m.index;
+                    if (isRow) {
+                        r = rowOrCol;
+                        c = idx;
+                    } else {
+                        r = idx;
+                        c = rowOrCol;
+                    }
+                    return { r, c, level: m.level, scale: 1 };
+                });
+
+                if (isReversed) {
+                    newLine.reverse();
+                }
+
+                return { newLine, scoreIncrease, merged, movements: gridMovements, merges: gridMerges };
             }
 
             function moveGrid(direction) {
                 let originalGrid = JSON.stringify(grid);
                 let scoreIncrease = 0;
-                let newGrid = grid.map(row => [...row]); // Deep copy
+                let newGrid = grid.map(row => [...row]);
+                movingTiles = [];
                 mergedTiles = [];
+                let hadMerge = false;
 
                 if (direction === 'left' || direction === 'right') {
                     for (let r = 0; r < SIZE; r++) {
-                        let row = newGrid[r];
-                        if (direction === 'right') row.reverse();
-                        let result = processLine(row);
+                        let row = [...newGrid[r]];
+                        const isReversed = direction === 'right';
+                        if (isReversed) row.reverse();
+                        
+                        const result = processLineWithMovement(row, r, true, isReversed);
                         scoreIncrease += result.scoreIncrease;
-                        newGrid[r] = direction === 'right' ? result.newLine.reverse() : result.newLine;
-                        result.mergedIndices.forEach(c => {
-                            mergedTiles.push({r, c: direction === 'right' ? SIZE - 1 - c : c});
-                        });
+                        newGrid[r] = result.newLine;
+                        movingTiles.push(...result.movements);
+                        mergedTiles.push(...result.merges);
+                        if (result.merged) hadMerge = true;
                     }
-                } else { // 'up' or 'down'
-                    newGrid = transpose(newGrid);
-                    for (let r = 0; r < SIZE; r++) {
-                        let row = newGrid[r];
-                        if (direction === 'down') row.reverse();
-                        let result = processLine(row);
+                } else {
+                    for (let c = 0; c < SIZE; c++) {
+                        let col = [];
+                        for (let r = 0; r < SIZE; r++) {
+                            col.push(newGrid[r][c]);
+                        }
+                        
+                        const isReversed = direction === 'down';
+                        if (isReversed) col.reverse();
+                        
+                        const result = processLineWithMovement(col, c, false, isReversed);
                         scoreIncrease += result.scoreIncrease;
-                        newGrid[r] = direction === 'down' ? result.newLine.reverse() : result.newLine;
-                        result.mergedIndices.forEach(c => {
-                            mergedTiles.push({r: direction === 'down' ? SIZE - 1 - c : c, c: r});
-                        });
+                        
+                        const newCol = result.newLine;
+                        for (let r = 0; r < SIZE; r++) {
+                            newGrid[r][c] = newCol[r];
+                        }
+                        movingTiles.push(...result.movements);
+                        mergedTiles.push(...result.merges);
+                        if (result.merged) hadMerge = true;
                     }
-                    newGrid = transpose(newGrid);
                 }
-                
-                grid = newGrid;
-                updateScore(score + scoreIncrease);
-                return JSON.stringify(grid) !== originalGrid;
-            }
 
-            function transpose(matrix) {
-                return matrix[0].map((col, i) => matrix.map(row => row[i]));
+                // Filter out tiles that don't actually move
+                movingTiles = movingTiles.filter(t => t.fromR !== t.toR || t.fromC !== t.toC);
+
+                const moved = JSON.stringify(newGrid) !== originalGrid;
+                
+                if (moved) {
+                    grid = newGrid;
+                    updateScore(score + scoreIncrease);
+                    
+                    if (hadMerge && audioUnlocked && !isMuted) {
+                        mergeSound.currentTime = 0;
+                        mergeSound.play();
+                    }
+                }
+
+                return moved;
             }
 
             function isGameOver() {
@@ -566,42 +890,87 @@
             }
             
             function handleInput(direction) {
-                 if (isMoving) return;
-                 unlockAudio();
-                 const moved = moveGrid(direction);
-                 if (moved) {
-                    isMoving = true;
-                    addRandomTile();
+                if (isMoving) return;
+                unlockAudio();
+                
+                const moved = moveGrid(direction);
+                if (!moved) return;
+                
+                isMoving = true;
+                let startTime = null;
+                let phase = 'slide'; // 'slide', 'merge', 'pop'
 
-                    let startTime = null;
-                    const animationDuration = 200; // ms
+                function animate(timestamp) {
+                    if (!startTime) startTime = timestamp;
+                    const elapsed = timestamp - startTime;
 
-                    function animate(timestamp) {
-                        if (!startTime) startTime = timestamp;
-                        const progress = timestamp - startTime;
-                        
-                        if (newTile) {
-                            newTile.scale = Math.min(progress / animationDuration, 1);
-                        }
-
-                        mergedTiles.forEach(tile => {
-                            const mergeProgress = Math.min(progress / animationDuration, 1);
-                            tile.scale = 1 + 0.2 * Math.sin(mergeProgress * Math.PI);
+                    if (phase === 'slide') {
+                        // Animate sliding tiles
+                        const slideProgress = Math.min(elapsed / SLIDE_DURATION, 1);
+                        movingTiles.forEach(tile => {
+                            tile.progress = slideProgress;
                         });
-
+                        
                         drawBoard();
+                        updateParticles();
 
-                        if (progress < animationDuration) {
-                            requestAnimationFrame(animate);
+                        if (slideProgress >= 1) {
+                            // Slide done, start merge phase
+                            movingTiles = [];
+                            phase = 'merge';
+                            startTime = timestamp;
+                            
+                            // Create particles for each merge
+                            mergedTiles.forEach(tile => {
+                                createMergeParticles(tile.r, tile.c, tile.level);
+                            });
+                            
+                            // Add new tile
+                            addRandomTile();
                         } else {
-                            newTile = null; // Animation finished
-                            mergedTiles = []; // Clear merged tiles after animation
-                            if (isGameOver()) showGameOver();
-                            isMoving = false;
+                            requestAnimationFrame(animate);
+                            return;
                         }
                     }
-                    requestAnimationFrame(animate);
-                 }
+
+                    if (phase === 'merge') {
+                        const mergeElapsed = timestamp - startTime;
+                        const mergeProgress = Math.min(mergeElapsed / MERGE_DURATION, 1);
+                        
+                        // Elastic pulse effect for merged tiles
+                        mergedTiles.forEach(tile => {
+                            if (mergeProgress < 0.5) {
+                                tile.scale = 1 + 0.3 * easeOutQuad(mergeProgress * 2);
+                            } else {
+                                tile.scale = 1.3 - 0.3 * easeOutElastic((mergeProgress - 0.5) * 2);
+                            }
+                        });
+
+                        // Pop-in animation for new tile
+                        if (newTile) {
+                            const popProgress = Math.min(mergeElapsed / POP_DURATION, 1);
+                            newTile.scale = popProgress;
+                        }
+
+                        updateParticles();
+                        drawBoard();
+
+                        if (mergeProgress >= 1 && (!newTile || newTile.scale >= 1)) {
+                            // All animations complete
+                            newTile = null;
+                            mergedTiles = [];
+                            
+                            if (isGameOver()) {
+                                showGameOver();
+                            }
+                            isMoving = false;
+                        } else {
+                            requestAnimationFrame(animate);
+                        }
+                    }
+                }
+                
+                requestAnimationFrame(animate);
             }
 
             // --- Keyboard, Mouse, and Touch Handlers ---

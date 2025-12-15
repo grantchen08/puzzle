@@ -32,10 +32,18 @@ The buildings evolve as you merge them, starting from a simple tent and growing 
 ## Features
 
 - **Responsive Design:** The game is playable on both desktop and mobile devices.
-- **Score Tracking:** Your score is displayed and updated in real-time.
+- **Score Tracking:** Your score is displayed and updated in real-time with animated counting.
 - **New Game:** You can start a new game at any time by clicking the "New Game" button.
 - **Game Over State:** The game clearly indicates when the game is over and provides an option to try again.
 - **Touch Controls:** In addition to keyboard controls, you can play the game by swiping on touch-enabled devices.
+
+### Animations
+
+- **Smooth Tile Sliding:** Tiles glide smoothly across the board with eased motion.
+- **Merge Effects:** When tiles merge, they pulse with an elastic bounce effect and emit colorful particle bursts.
+- **New Tile Pop-in:** New tiles appear with a satisfying pop-in animation.
+- **Score Animation:** The score counter animates smoothly when points are earned.
+- **Tile Backgrounds:** Each tile level has a distinct background color for better visual hierarchy.
 
 ## How to Run Locally
 
