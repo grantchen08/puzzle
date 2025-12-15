@@ -419,16 +419,16 @@
             }
 
             const TILE_DATA = [
-                { emoji: '⛺', score: 2, color: '#eee4da' },   // Level 1
-                { emoji: '🛖', score: 4, color: '#ede0c8' },   // Level 2
-                { emoji: '🏠', score: 8, color: '#f2b179' },   // Level 3
-                { emoji: '🏡', score: 16, color: '#f59563' },  // Level 4
-                { emoji: '🏢', score: 32, color: '#f67c5f' },  // Level 5
-                { emoji: '🏙️', score: 64, color: '#f65e3b' },  // Level 6
-                { emoji: '🏰', score: 128, color: '#edcf72' }, // Level 7
-                { emoji: '🏛️', score: 256, color: '#edcc61' }, // Level 8
-                { emoji: '🗼', score: 512, color: '#edc850' }, // Level 9
-                { emoji: '🚀', score: 1024, color: '#edc53f' } // Level 10 - SciFi!
+                { emoji: '⛺', score: 2, color: '#eee4da', glow: null },   // Level 1 - no glow
+                { emoji: '🛖', score: 4, color: '#ede0c8', glow: null },   // Level 2 - no glow
+                { emoji: '🏠', score: 8, color: '#f2b179', glow: 'rgba(242, 177, 121, 0.4)' },   // Level 3
+                { emoji: '🏡', score: 16, color: '#f59563', glow: 'rgba(245, 149, 99, 0.5)' },  // Level 4
+                { emoji: '🏢', score: 32, color: '#f67c5f', glow: 'rgba(246, 124, 95, 0.5)' },  // Level 5
+                { emoji: '🏙️', score: 64, color: '#f65e3b', glow: 'rgba(246, 94, 59, 0.6)' },  // Level 6
+                { emoji: '🏰', score: 128, color: '#edcf72', glow: 'rgba(237, 207, 114, 0.7)' }, // Level 7
+                { emoji: '🏛️', score: 256, color: '#edcc61', glow: 'rgba(237, 204, 97, 0.7)' }, // Level 8
+                { emoji: '🗼', score: 512, color: '#edc850', glow: 'rgba(237, 200, 80, 0.8)' }, // Level 9
+                { emoji: '🚀', score: 1024, color: '#edc53f', glow: 'rgba(255, 215, 0, 0.9)' } // Level 10 - golden glow!
             ];
 
             // Easing functions for smooth animations
@@ -456,6 +456,7 @@
             }
 
             function setupGame() {
+                stopGlowAnimation();
                 grid = Array.from({ length: SIZE }, () => Array(SIZE).fill(0));
                 score = 0;
                 displayScore = 0;
@@ -471,6 +472,8 @@
                 addRandomTile(true);
                 addRandomTile(true);
                 resizeCanvas();
+                // Start glow animation (tiles are level 1, no glow yet, but ready for later)
+                startGlowAnimation();
             }
 
             function getCellPosition(r, c) {
@@ -550,23 +553,67 @@
                 const tile = TILE_DATA[level - 1];
                 if (!tile) return;
 
-                const cornerRadius = cellSize * 0.05;
+                const cornerRadius = cellSize * 0.08;
                 const centerX = x + cellSize / 2;
                 const centerY = y + cellSize / 2;
                 const scaledSize = cellSize * scale;
                 const scaledX = centerX - scaledSize / 2;
                 const scaledY = centerY - scaledSize / 2;
 
-                // Draw tile background with subtle shadow for depth
                 ctx.save();
+
+                // Draw glow effect for higher-level tiles
+                if (tile.glow) {
+                    const glowIntensity = Math.min(level / 10, 1);
+                    const glowSize = cellSize * 0.15 * glowIntensity * scale;
+                    const pulseOffset = Math.sin(Date.now() / 500 + level) * 0.15 + 1; // Subtle pulse
+                    
+                    ctx.shadowColor = tile.glow;
+                    ctx.shadowBlur = (15 + level * 3) * pulseOffset * scale;
+                    ctx.shadowOffsetX = 0;
+                    ctx.shadowOffsetY = 0;
+                    
+                    // Draw multiple layers for stronger glow
+                    ctx.fillStyle = tile.glow;
+                    drawRoundedRect(ctx, scaledX - glowSize/2, scaledY - glowSize/2, 
+                                    scaledSize + glowSize, scaledSize + glowSize, 
+                                    cornerRadius * scale * 1.2);
+                    ctx.fill();
+                }
+
+                // Reset shadow for tile background
+                ctx.shadowColor = 'transparent';
+                ctx.shadowBlur = 0;
+
+                // Draw tile background with subtle shadow for depth
                 if (scale > 1) {
                     ctx.shadowColor = 'rgba(0, 0, 0, 0.2)';
                     ctx.shadowBlur = 10 * (scale - 1) * 5;
                     ctx.shadowOffsetY = 3 * (scale - 1) * 5;
+                } else {
+                    // Subtle drop shadow for all tiles
+                    ctx.shadowColor = 'rgba(0, 0, 0, 0.15)';
+                    ctx.shadowBlur = 4;
+                    ctx.shadowOffsetY = 2;
                 }
+
+                // Draw tile background
                 ctx.fillStyle = tile.color;
                 drawRoundedRect(ctx, scaledX, scaledY, scaledSize, scaledSize, cornerRadius * scale);
                 ctx.fill();
+
+                // Add subtle inner highlight (top edge)
+                ctx.shadowColor = 'transparent';
+                ctx.shadowBlur = 0;
+                ctx.shadowOffsetY = 0;
+                
+                const gradient = ctx.createLinearGradient(scaledX, scaledY, scaledX, scaledY + scaledSize * 0.3);
+                gradient.addColorStop(0, 'rgba(255, 255, 255, 0.3)');
+                gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+                ctx.fillStyle = gradient;
+                drawRoundedRect(ctx, scaledX, scaledY, scaledSize, scaledSize * 0.3, cornerRadius * scale);
+                ctx.fill();
+
                 ctx.restore();
 
                 // Draw emoji
@@ -956,9 +1003,13 @@
             function handleInput(direction) {
                 if (isMoving) return;
                 unlockAudio();
+                stopGlowAnimation();
                 
                 const moved = moveGrid(direction);
-                if (!moved) return;
+                if (!moved) {
+                    startGlowAnimation();
+                    return;
+                }
                 
                 isMoving = true;
                 let startTime = null;
@@ -1032,6 +1083,9 @@
                             // Continue animating particles until they're all gone
                             if (particles.length > 0) {
                                 requestAnimationFrame(animateParticles);
+                            } else {
+                                // Start glow animation if no particles
+                                startGlowAnimation();
                             }
                         } else {
                             requestAnimationFrame(animate);
@@ -1044,13 +1098,58 @@
 
             // Separate particle animation loop that continues after main animation ends
             function animateParticles() {
-                if (particles.length === 0) return;
+                if (particles.length === 0) {
+                    startGlowAnimation();
+                    return;
+                }
                 
                 updateParticles();
                 drawBoard();
                 
                 if (particles.length > 0) {
                     requestAnimationFrame(animateParticles);
+                } else {
+                    startGlowAnimation();
+                }
+            }
+
+            // Check if board has any glowing tiles
+            function hasGlowingTiles() {
+                for (let r = 0; r < SIZE; r++) {
+                    for (let c = 0; c < SIZE; c++) {
+                        if (grid[r][c] >= 3) return true; // Level 3+ has glow
+                    }
+                }
+                return false;
+            }
+
+            // Continuous glow animation loop
+            let glowAnimationId = null;
+            function animateGlow() {
+                if (isMoving || particles.length > 0) {
+                    // Main animation loop is running, don't interfere
+                    glowAnimationId = null;
+                    return;
+                }
+                
+                if (hasGlowingTiles()) {
+                    drawBoard();
+                    glowAnimationId = requestAnimationFrame(animateGlow);
+                } else {
+                    glowAnimationId = null;
+                }
+            }
+
+            function startGlowAnimation() {
+                if (!glowAnimationId && hasGlowingTiles() && !isMoving) {
+                    glowAnimationId = requestAnimationFrame(animateGlow);
+                }
+            }
+
+            function stopGlowAnimation() {
+                if (glowAnimationId) {
+                    cancelAnimationFrame(glowAnimationId);
+                    glowAnimationId = null;
                 }
             }
 
