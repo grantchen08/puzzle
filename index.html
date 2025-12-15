@@ -361,11 +361,28 @@
             let mergedTiles = [];
             let movingTiles = []; // For slide animations
             let particles = []; // For particle effects
+            let floatingTexts = []; // For score pop-ups and combo text
+            let screenShake = { x: 0, y: 0, intensity: 0 }; // Screen shake effect
+            let comboCount = 0; // Merges in current move
+            let highestTileEver = 1; // Track highest tile reached
+            let celebrationActive = false;
+            let confetti = []; // Confetti particles for celebrations
 
             // Animation timing
-            const SLIDE_DURATION = 120; // ms - fast slide
-            const POP_DURATION = 150; // ms - new tile pop-in
-            const MERGE_DURATION = 200; // ms - merge pulse
+            const SLIDE_DURATION = 100; // ms - fast slide (was 120)
+            const POP_DURATION = 120; // ms - new tile pop-in (was 150)
+            const MERGE_DURATION = 180; // ms - merge pulse (was 200)
+
+            // Milestone messages
+            const COMBO_MESSAGES = ['', '', 'COMBO!', 'SUPER!', 'AMAZING!', 'INCREDIBLE!', 'UNSTOPPABLE!'];
+            const TILE_CELEBRATIONS = {
+                5: { message: 'NICE! 🏢', color: '#ff6b6b' },
+                6: { message: 'GREAT! 🏙️', color: '#ff4757' },
+                7: { message: 'AWESOME! 🏰', color: '#ffa502', confetti: true },
+                8: { message: 'AMAZING! 🏛️', color: '#ffdd59', confetti: true },
+                9: { message: 'LEGENDARY! 🗼', color: '#fff200', confetti: true },
+                10: { message: '🚀 INCREDIBLE! 🚀', color: '#00ff88', confetti: true, big: true }
+            };
 
             function toggleMute() {
                 isMuted = !isMuted;
@@ -469,6 +486,12 @@
                 movingTiles = [];
                 mergedTiles = [];
                 particles = [];
+                floatingTexts = [];
+                confetti = [];
+                screenShake = { x: 0, y: 0, intensity: 0 };
+                comboCount = 0;
+                highestTileEver = 1;
+                celebrationActive = false;
                 addRandomTile(true);
                 addRandomTile(true);
                 resizeCanvas();
@@ -491,9 +514,13 @@
                 const cellSize = (canvas.width - (SIZE + 1) * gap) / SIZE;
                 const cornerRadius = cellSize * 0.05;
 
+                // Apply screen shake
+                ctx.save();
+                ctx.translate(screenShake.x, screenShake.y);
+
                 // Draw board background
                 ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--board-bg');
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillRect(-10, -10, canvas.width + 20, canvas.height + 20); // Slightly larger to cover shake
 
                 // Draw empty cells
                 for (let r = 0; r < SIZE; r++) {
@@ -547,6 +574,14 @@
 
                 // Draw particles
                 drawParticles();
+                
+                // Draw confetti (on top of everything)
+                drawConfetti();
+                
+                // Draw floating texts (scores, combos)
+                drawFloatingTexts();
+                
+                ctx.restore(); // Restore from screen shake
             }
 
             function drawTile(level, x, y, cellSize, scale) {
@@ -740,6 +775,148 @@
                     }
                     ctx.restore();
                 });
+            }
+
+            // Floating score pop-ups
+            function createFloatingText(x, y, text, color, size = 24, isCombo = false) {
+                floatingTexts.push({
+                    x: x,
+                    y: y,
+                    text: text,
+                    color: color,
+                    size: size,
+                    alpha: 1,
+                    vy: isCombo ? -1 : -2, // Combo text rises slower
+                    scale: isCombo ? 0 : 1, // Combo text pops in
+                    isCombo: isCombo
+                });
+            }
+
+            function updateFloatingTexts() {
+                floatingTexts = floatingTexts.filter(t => {
+                    t.y += t.vy;
+                    t.alpha -= 0.02;
+                    if (t.isCombo) {
+                        t.scale = Math.min(t.scale + 0.15, 1.2);
+                        if (t.scale >= 1.2) t.scale = 1;
+                    }
+                    return t.alpha > 0;
+                });
+            }
+
+            function drawFloatingTexts() {
+                floatingTexts.forEach(t => {
+                    ctx.save();
+                    ctx.globalAlpha = t.alpha;
+                    ctx.font = `bold ${t.size * t.scale}px ${getComputedStyle(document.documentElement).getPropertyValue('--font-family')}`;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    
+                    // Draw text shadow/outline
+                    ctx.strokeStyle = 'rgba(0,0,0,0.5)';
+                    ctx.lineWidth = 3;
+                    ctx.strokeText(t.text, t.x, t.y);
+                    
+                    // Draw text
+                    ctx.fillStyle = t.color;
+                    ctx.fillText(t.text, t.x, t.y);
+                    ctx.restore();
+                });
+            }
+
+            // Screen shake effect
+            function triggerScreenShake(intensity) {
+                screenShake.intensity = Math.max(screenShake.intensity, intensity);
+            }
+
+            function updateScreenShake() {
+                if (screenShake.intensity > 0) {
+                    screenShake.x = (Math.random() - 0.5) * screenShake.intensity;
+                    screenShake.y = (Math.random() - 0.5) * screenShake.intensity;
+                    screenShake.intensity *= 0.85; // Decay
+                    if (screenShake.intensity < 0.5) {
+                        screenShake.intensity = 0;
+                        screenShake.x = 0;
+                        screenShake.y = 0;
+                    }
+                }
+            }
+
+            // Confetti system for celebrations
+            function createConfetti(count = 50) {
+                const colors = ['#ff6b6b', '#ffa502', '#ffdd59', '#00ff88', '#00d2d3', '#ff9ff3', '#ffffff'];
+                for (let i = 0; i < count; i++) {
+                    confetti.push({
+                        x: Math.random() * canvas.width,
+                        y: -20 - Math.random() * 100,
+                        vx: (Math.random() - 0.5) * 8,
+                        vy: Math.random() * 3 + 2,
+                        size: Math.random() * 8 + 4,
+                        color: colors[Math.floor(Math.random() * colors.length)],
+                        rotation: Math.random() * 360,
+                        rotationSpeed: (Math.random() - 0.5) * 15,
+                        alpha: 1
+                    });
+                }
+                celebrationActive = true;
+            }
+
+            function updateConfetti() {
+                confetti = confetti.filter(c => {
+                    c.x += c.vx;
+                    c.y += c.vy;
+                    c.vy += 0.1; // gravity
+                    c.vx *= 0.99; // air resistance
+                    c.rotation += c.rotationSpeed;
+                    c.alpha -= 0.005;
+                    return c.alpha > 0 && c.y < canvas.height + 50;
+                });
+                if (confetti.length === 0) {
+                    celebrationActive = false;
+                }
+            }
+
+            function drawConfetti() {
+                confetti.forEach(c => {
+                    ctx.save();
+                    ctx.translate(c.x, c.y);
+                    ctx.rotate(c.rotation * Math.PI / 180);
+                    ctx.globalAlpha = c.alpha;
+                    ctx.fillStyle = c.color;
+                    ctx.fillRect(-c.size / 2, -c.size / 4, c.size, c.size / 2);
+                    ctx.restore();
+                });
+            }
+
+            // Trigger celebration for milestone tiles
+            function checkMilestone(level) {
+                if (level > highestTileEver) {
+                    highestTileEver = level;
+                    const celebration = TILE_CELEBRATIONS[level];
+                    if (celebration) {
+                        // Show celebration text in center
+                        const centerX = canvas.width / 2;
+                        const centerY = canvas.height / 2;
+                        createFloatingText(centerX, centerY, celebration.message, celebration.color, celebration.big ? 48 : 36, true);
+                        
+                        // Trigger confetti for big milestones
+                        if (celebration.confetti) {
+                            createConfetti(celebration.big ? 100 : 50);
+                        }
+                        
+                        // Big screen shake
+                        triggerScreenShake(celebration.big ? 15 : 8);
+                    }
+                }
+            }
+
+            // Show combo text
+            function showCombo(count, x, y) {
+                if (count >= 2 && count < COMBO_MESSAGES.length) {
+                    const message = COMBO_MESSAGES[count];
+                    const colors = ['', '', '#ffdd59', '#ffa502', '#ff6b6b', '#ff4757', '#ff00ff'];
+                    createFloatingText(x, y - 30, message, colors[count] || '#ffffff', 28 + count * 4, true);
+                }
             }
 
             function updateScoreDisplay() {
@@ -1042,6 +1219,9 @@
                             tile.progress = slideProgress;
                         });
                         
+                        updateScreenShake();
+                        updateFloatingTexts();
+                        updateConfetti();
                         drawBoard();
                         updateParticles();
 
@@ -1051,10 +1231,34 @@
                             phase = 'merge';
                             startTime = timestamp;
                             
-                            // Create particles for each merge
-                            mergedTiles.forEach(tile => {
+                            // Count merges for combo system
+                            comboCount = mergedTiles.length;
+                            
+                            // Create particles and score pop-ups for each merge
+                            mergedTiles.forEach((tile, index) => {
                                 createMergeParticles(tile.r, tile.c, tile.level);
+                                
+                                // Create floating score text
+                                const pos = getCellPosition(tile.r, tile.c);
+                                const scoreValue = TILE_DATA[tile.level - 1]?.score || 0;
+                                const centerX = pos.x + pos.size / 2;
+                                const centerY = pos.y + pos.size / 2;
+                                createFloatingText(centerX, centerY, '+' + scoreValue, '#ffffff', 20 + tile.level * 2);
+                                
+                                // Screen shake based on tile level
+                                triggerScreenShake(2 + tile.level * 1.5);
+                                
+                                // Check for milestone celebration
+                                checkMilestone(tile.level);
                             });
+                            
+                            // Show combo message
+                            if (comboCount >= 2) {
+                                const centerX = canvas.width / 2;
+                                const centerY = canvas.height / 3;
+                                showCombo(comboCount, centerX, centerY);
+                                triggerScreenShake(5 + comboCount * 3); // Extra shake for combos
+                            }
                             
                             // Add new tile
                             addRandomTile();
@@ -1084,12 +1288,16 @@
                         }
 
                         updateParticles();
+                        updateFloatingTexts();
+                        updateScreenShake();
+                        updateConfetti();
                         drawBoard();
 
                         if (mergeProgress >= 1 && (!newTile || newTile.scale >= 1)) {
                             // Tile animations complete
                             newTile = null;
                             mergedTiles = [];
+                            comboCount = 0;
                             
                             if (isGameOver()) {
                                 showGameOver();
@@ -1114,15 +1322,21 @@
 
             // Separate particle animation loop that continues after main animation ends
             function animateParticles() {
-                if (particles.length === 0) {
+                const hasEffects = particles.length > 0 || floatingTexts.length > 0 || 
+                                   screenShake.intensity > 0 || confetti.length > 0;
+                
+                if (!hasEffects) {
                     startGlowAnimation();
                     return;
                 }
                 
                 updateParticles();
+                updateFloatingTexts();
+                updateScreenShake();
+                updateConfetti();
                 drawBoard();
                 
-                if (particles.length > 0) {
+                if (hasEffects) {
                     requestAnimationFrame(animateParticles);
                 } else {
                     startGlowAnimation();
