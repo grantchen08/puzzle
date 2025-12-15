@@ -956,7 +956,7 @@
                         drawBoard();
 
                         if (mergeProgress >= 1 && (!newTile || newTile.scale >= 1)) {
-                            // All animations complete
+                            // Tile animations complete
                             newTile = null;
                             mergedTiles = [];
                             
@@ -964,6 +964,11 @@
                                 showGameOver();
                             }
                             isMoving = false;
+                            
+                            // Continue animating particles until they're all gone
+                            if (particles.length > 0) {
+                                requestAnimationFrame(animateParticles);
+                            }
                         } else {
                             requestAnimationFrame(animate);
                         }
@@ -971,6 +976,18 @@
                 }
                 
                 requestAnimationFrame(animate);
+            }
+
+            // Separate particle animation loop that continues after main animation ends
+            function animateParticles() {
+                if (particles.length === 0) return;
+                
+                updateParticles();
+                drawBoard();
+                
+                if (particles.length > 0) {
+                    requestAnimationFrame(animateParticles);
+                }
             }
 
             // --- Keyboard, Mouse, and Touch Handlers ---
