@@ -32,18 +32,27 @@ The buildings evolve as you merge them, starting from a simple tent and growing 
 ## Features
 
 - **Responsive Design:** The game is playable on both desktop and mobile devices.
-- **Score Tracking:** Your score is displayed and updated in real-time with animated counting.
+- **Score Tracking:** Your current score and personal best are displayed with animated counting.
+- **High Score:** Your best score is saved locally and persists across sessions.
 - **New Game:** You can start a new game at any time by clicking the "New Game" button.
-- **Game Over State:** The game clearly indicates when the game is over and provides an option to try again.
+- **Game Over State:** The game clearly indicates when the game is over, celebrates new records, and provides an option to try again.
 - **Touch Controls:** In addition to keyboard controls, you can play the game by swiping on touch-enabled devices.
+- **Sound Effects:** Satisfying sounds for merges and new tiles (with mute option).
 
-### Animations
+### Visual Effects & "Game Juice"
+
+The game features polished animations and effects inspired by popular mobile games:
 
 - **Smooth Tile Sliding:** Tiles glide smoothly across the board with eased motion.
-- **Merge Effects:** When tiles merge, they pulse with an elastic bounce effect and emit colorful particle bursts.
+- **Merge Effects:** Tiles pulse with an elastic bounce effect and emit colorful particle bursts.
+- **Floating Score Pop-ups:** "+64", "+128" etc. float up from merge locations.
+- **Tile Glow:** Higher-level tiles (🏢 and above) emit a pulsing colored glow/aura.
+- **Screen Shake:** The board shakes on merges — intensity scales with tile level.
+- **Combo System:** Merge multiple pairs in one move for "COMBO!", "SUPER!", "AMAZING!" messages.
+- **Milestone Celebrations:** Special messages and confetti when reaching 🏰 Castle and above.
+- **Confetti Explosions:** Colorful confetti rains down for big achievements.
 - **New Tile Pop-in:** New tiles appear with a satisfying pop-in animation.
-- **Score Animation:** The score counter animates smoothly when points are earned.
-- **Tile Backgrounds:** Each tile level has a distinct background color for better visual hierarchy.
+- **Score Animation:** The score counter animates and bounces when points are earned.
 
 ## How to Run Locally
 
