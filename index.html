@@ -389,8 +389,27 @@
                 muteBtn.textContent = isMuted ? '🔇' : '🔊';
             }
 
+            function safeGetItem(key) {
+                try {
+                    return window.localStorage.getItem(key);
+                } catch (e) {
+                    // Some environments (privacy mode / restrictive file:// origins) can block storage.
+                    return null;
+                }
+            }
+
+            function safeSetItem(key, value) {
+                try {
+                    window.localStorage.setItem(key, value);
+                    return true;
+                } catch (e) {
+                    // Storage unavailable; best score will not persist across reloads in this environment.
+                    return false;
+                }
+            }
+
             function loadBestScore() {
-                const saved = localStorage.getItem(STORAGE_KEY);
+                const saved = safeGetItem(STORAGE_KEY);
                 bestScore = saved ? parseInt(saved, 10) : 0;
                 bestScoreDisplay.textContent = bestScore;
             }
@@ -398,7 +417,7 @@
             function saveBestScore() {
                 if (score > bestScore) {
                     bestScore = score;
-                    localStorage.setItem(STORAGE_KEY, bestScore);
+                    safeSetItem(STORAGE_KEY, String(bestScore));
                     bestScoreDisplay.textContent = bestScore;
                     return true; // New record!
                 }
@@ -966,6 +985,8 @@
                     if (score > bestScore) {
                         bestScore = score;
                         bestScoreDisplay.textContent = bestScore;
+                        // Persist immediately so "New Game" / refresh still keeps it.
+                        safeSetItem(STORAGE_KEY, String(bestScore));
                     }
                 }
             }
