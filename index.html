@@ -384,9 +384,171 @@
                 10: { message: '🚀 INCREDIBLE! 🚀', color: '#00ff88', confetti: true, big: true }
             };
 
+            // --- Web Audio "chiptune" background music (original melody) ---
+            // Note: Browsers require a user gesture to start audio; we start music via unlockAudio().
+            let audioCtx = null;
+            let masterGain = null; // Master volume for all WebAudio (ties into mute button)
+            let musicGain = null;  // Music-only volume (leave SFX as <audio> elements)
+
+            const musicState = {
+                isPlaying: false,
+                timerId: null,
+                nextNoteTime: 0,
+                step: 0,
+                tempo: 132, // BPM (snappy, retro feel)
+                lookaheadMs: 25,
+                scheduleAheadSec: 0.12
+            };
+
+            // Simple upbeat 8-bit style loop (not the Mario theme, but similar "chiptune" vibe).
+            // MIDI note numbers; null = rest. dur = beats (quarter-note = 1).
+            const MUSIC_MELODY = [
+                { midi: 76, dur: 0.5 }, { midi: 83, dur: 0.5 }, { midi: 81, dur: 0.5 }, { midi: 83, dur: 0.5 },
+                { midi: 79, dur: 1.0 }, { midi: 76, dur: 0.5 }, { midi: 79, dur: 0.5 },
+                { midi: 81, dur: 1.0 }, { midi: 79, dur: 0.5 }, { midi: 76, dur: 0.5 },
+                { midi: 74, dur: 1.0 }, { midi: null, dur: 0.5 }, { midi: 74, dur: 0.5 },
+                { midi: 76, dur: 1.0 }, { midi: null, dur: 1.0 }
+            ];
+
+            // Light bass pulse underneath the melody (triangle wave).
+            const MUSIC_BASS = [
+                { midi: 52, dur: 1.0 }, { midi: 52, dur: 1.0 }, { midi: 55, dur: 1.0 }, { midi: 55, dur: 1.0 },
+                { midi: 57, dur: 1.0 }, { midi: 57, dur: 1.0 }, { midi: 55, dur: 1.0 }, { midi: 55, dur: 1.0 }
+            ];
+
+            function midiToFreq(midi) {
+                return 440 * Math.pow(2, (midi - 69) / 12);
+            }
+
+            function ensureAudioContext() {
+                if (audioCtx) return;
+                const Ctx = window.AudioContext || window.webkitAudioContext;
+                if (!Ctx) return; // Very old browser
+
+                audioCtx = new Ctx();
+                masterGain = audioCtx.createGain();
+                musicGain = audioCtx.createGain();
+
+                // Keep music a bit subtle under SFX.
+                musicGain.gain.value = 0.22;
+                masterGain.gain.value = isMuted ? 0 : 1;
+
+                musicGain.connect(masterGain);
+                masterGain.connect(audioCtx.destination);
+            }
+
+            function setWebAudioMuted(muted) {
+                if (!masterGain) return;
+                masterGain.gain.setValueAtTime(muted ? 0 : 1, audioCtx.currentTime);
+            }
+
+            function playOscNote({ freq, type, startTime, durationSec, gain }) {
+                if (!audioCtx || !musicGain) return;
+                const osc = audioCtx.createOscillator();
+                const amp = audioCtx.createGain();
+
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, startTime);
+
+                // Quick attack + short release for classic bleep feel.
+                const attack = 0.005;
+                const release = Math.min(0.06, durationSec * 0.35);
+                const sustainTime = Math.max(0, durationSec - attack - release);
+
+                amp.gain.setValueAtTime(0.0001, startTime);
+                amp.gain.exponentialRampToValueAtTime(Math.max(0.0002, gain), startTime + attack);
+                if (sustainTime > 0) {
+                    amp.gain.setValueAtTime(Math.max(0.0002, gain), startTime + attack + sustainTime);
+                }
+                amp.gain.exponentialRampToValueAtTime(0.0001, startTime + durationSec);
+
+                osc.connect(amp);
+                amp.connect(musicGain);
+
+                osc.start(startTime);
+                osc.stop(startTime + durationSec + 0.02);
+            }
+
+            function scheduleMusic() {
+                if (!audioCtx || !musicState.isPlaying) return;
+                const secondsPerBeat = 60 / musicState.tempo;
+
+                while (musicState.nextNoteTime < audioCtx.currentTime + musicState.scheduleAheadSec) {
+                    const m = MUSIC_MELODY[musicState.step % MUSIC_MELODY.length];
+                    const b = MUSIC_BASS[musicState.step % MUSIC_BASS.length];
+
+                    const start = musicState.nextNoteTime;
+                    const durSec = (m.dur || 1) * secondsPerBeat;
+
+                    if (m.midi != null) {
+                        playOscNote({
+                            freq: midiToFreq(m.midi),
+                            type: 'square',
+                            startTime: start,
+                            durationSec: durSec * 0.98,
+                            gain: 0.08
+                        });
+                        // Soft harmony a fifth up, occasional (adds sparkle)
+                        if (musicState.step % 4 === 2) {
+                            playOscNote({
+                                freq: midiToFreq(m.midi + 7),
+                                type: 'square',
+                                startTime: start + 0.01,
+                                durationSec: durSec * 0.65,
+                                gain: 0.03
+                            });
+                        }
+                    }
+
+                    if (b.midi != null) {
+                        playOscNote({
+                            freq: midiToFreq(b.midi),
+                            type: 'triangle',
+                            startTime: start,
+                            durationSec: secondsPerBeat * 0.95,
+                            gain: 0.05
+                        });
+                    }
+
+                    musicState.nextNoteTime += durSec;
+                    musicState.step++;
+                }
+            }
+
+            function startMusic() {
+                ensureAudioContext();
+                if (!audioCtx || musicState.isPlaying) return;
+                if (isMuted) return;
+
+                // Resume context if needed (autoplay policies).
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume().catch(() => {});
+                }
+
+                musicState.isPlaying = true;
+                musicState.step = 0;
+                musicState.nextNoteTime = audioCtx.currentTime + 0.05;
+                musicState.timerId = setInterval(scheduleMusic, musicState.lookaheadMs);
+            }
+
+            function stopMusic() {
+                if (!musicState.isPlaying) return;
+                musicState.isPlaying = false;
+                if (musicState.timerId) {
+                    clearInterval(musicState.timerId);
+                    musicState.timerId = null;
+                }
+            }
+
             function toggleMute() {
                 isMuted = !isMuted;
                 muteBtn.textContent = isMuted ? '🔇' : '🔊';
+                setWebAudioMuted(isMuted);
+                if (isMuted) {
+                    stopMusic();
+                } else if (audioUnlocked) {
+                    startMusic();
+                }
             }
 
             function safeGetItem(key) {
@@ -425,7 +587,16 @@
             }
 
             function unlockAudio() {
-                if (audioUnlocked) return;
+                ensureAudioContext();
+                if (audioCtx && audioCtx.state === 'suspended') {
+                    audioCtx.resume().catch(() => {});
+                }
+
+                // If we've already unlocked, still ensure music is running when unmuted.
+                if (audioUnlocked) {
+                    if (!isMuted) startMusic();
+                    return;
+                }
                 
                 if (!isMuted) {
                     const popPromise = popSound.play();
@@ -444,6 +615,7 @@
                     }
                 }
                 audioUnlocked = true;
+                if (!isMuted) startMusic();
             }
             
             function showHelp() {

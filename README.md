@@ -38,6 +38,7 @@ The buildings evolve as you merge them, starting from a simple tent and growing 
 - **Game Over State:** The game clearly indicates when the game is over, celebrates new records, and provides an option to try again.
 - **Touch Controls:** In addition to keyboard controls, you can play the game by swiping on touch-enabled devices.
 - **Sound Effects:** Satisfying sounds for merges and new tiles (with mute option).
+- **Background Music:** Retro chiptune-style music generated in JavaScript (Web Audio). Starts after your first input (browser autoplay rules) and follows the mute toggle.
 
 ### Visual Effects & "Game Juice"
 
@@ -65,5 +66,6 @@ This game is built with:
 - **HTML:** For the basic structure of the game.
 - **CSS:** For styling the game board, tiles, and other UI elements.
 - **JavaScript:** For all the game logic, including tile movement, merging, scoring, and event handling.
+- **Web Audio API:** For generated chiptune-style background music.
 
 The game is fully self-contained in the `index.html` file and has no external dependencies other than Google Fonts.
