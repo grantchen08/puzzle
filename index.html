@@ -103,8 +103,20 @@
             transition: background-color 0.2s ease;
         }
 
-        #new-game-btn:hover, #help-btn:hover, #mute-btn:hover {
+        #new-game-btn:hover, #help-btn:hover, #mute-btn:hover, #settings-btn:hover {
             background-color: #9c8a7a;
+        }
+
+        #settings-btn {
+            background-color: #8b7969;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
         }
 
         .board-container {
@@ -256,11 +268,171 @@
             align-self: center;
         }
 
+        /* Settings Modal (shares similar layout to help modal) */
+        #settings-modal {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90%;
+            max-width: 480px;
+            max-height: 80vh;
+            background-color: rgba(247, 242, 237, 0.98);
+            display: flex;
+            flex-direction: column;
+            text-align: left;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease-in-out;
+            z-index: 210;
+            border-radius: 8px;
+            padding: 25px;
+            box-sizing: border-box;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+
+        #settings-modal.show {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        #settings-modal h2 {
+            font-size: 2rem;
+            margin-top: 0;
+            margin-bottom: 16px;
+            text-align: center;
+        }
+
+        .setting-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(107, 95, 84, 0.15);
+        }
+
+        .setting-row:last-of-type {
+            border-bottom: none;
+        }
+
+        .setting-row label {
+            font-weight: 700;
+        }
+
+        .setting-row small {
+            display: block;
+            font-weight: 600;
+            opacity: 0.8;
+            margin-top: 4px;
+            line-height: 1.3;
+        }
+
+        .settings-actions {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 18px;
+            flex-wrap: wrap;
+        }
+
+        #settings-close-btn, #settings-log-btn, #settings-clear-log-btn {
+            background-color: #8b7969;
+            color: white;
+            border: none;
+            padding: 12px 16px;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+        #settings-close-btn:hover, #settings-log-btn:hover, #settings-clear-log-btn:hover, #log-close-btn:hover {
+            background-color: #9c8a7a;
+        }
+
+        /* Log Modal */
+        #log-modal {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 92%;
+            max-width: 520px;
+            max-height: 80vh;
+            background-color: rgba(247, 242, 237, 0.98);
+            display: flex;
+            flex-direction: column;
+            text-align: left;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease-in-out;
+            z-index: 220;
+            border-radius: 8px;
+            padding: 18px;
+            box-sizing: border-box;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+
+        #log-modal.show {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        #log-modal h2 {
+            font-size: 1.6rem;
+            margin: 0 0 10px 0;
+            text-align: center;
+        }
+
+        #log-output {
+            width: 100%;
+            flex: 1;
+            min-height: 260px;
+            max-height: 55vh;
+            resize: none;
+            border-radius: 8px;
+            border: 1px solid rgba(107, 95, 84, 0.25);
+            padding: 12px;
+            box-sizing: border-box;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+            font-size: 12px;
+            line-height: 1.35;
+            background: rgba(255, 255, 255, 0.7);
+            color: #3b332c;
+            white-space: pre;
+            overflow: auto;
+        }
+
+        .log-actions {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+
+        #log-close-btn, #log-copy-btn {
+            background-color: #8b7969;
+            color: white;
+            border: none;
+            padding: 12px 16px;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
         @media (max-width: 480px) {
             h1 { font-size: 2rem; }
             .score-container { padding: 5px 15px; }
             #score { font-size: 1.2rem; }
-            #new-game-btn, #try-again-btn, #help-btn, #help-close-btn { padding: 10px 15px; font-size: 0.9rem;}
+            #new-game-btn, #try-again-btn, #help-btn, #help-close-btn, #mute-btn, #settings-btn,
+            #settings-close-btn, #settings-log-btn, #settings-clear-log-btn, #log-close-btn, #log-copy-btn {
+                padding: 10px 15px; font-size: 0.9rem;
+            }
             #game-over-overlay h2 { font-size: 2.5rem; }
             #help-modal h2 { font-size: 1.8rem; }
             #help-modal ul { padding-left: 20px; }
@@ -285,6 +457,7 @@
                     <div id="best-score">0</div>
                 </div>
                 <button id="mute-btn">🔊</button>
+                <button id="settings-btn">⚙️</button>
                 <button id="help-btn">❓</button>
                 <button id="new-game-btn">New Game</button>
             </div>
@@ -323,6 +496,38 @@
                 </div>
                 <button id="help-close-btn">Got It!</button>
             </div>
+
+            <div id="settings-modal">
+                <h2>Settings</h2>
+                <div class="setting-row">
+                    <div>
+                        <label for="sfx-toggle">Sound Effects</label>
+                        <small>Merges + new-tile sounds</small>
+                    </div>
+                    <input id="sfx-toggle" type="checkbox" checked>
+                </div>
+                <div class="setting-row">
+                    <div>
+                        <label for="music-toggle">Background Music</label>
+                        <small>Chiptune music (starts after first input)</small>
+                    </div>
+                    <input id="music-toggle" type="checkbox" checked>
+                </div>
+                <div class="settings-actions">
+                    <button id="settings-log-btn">Log</button>
+                    <button id="settings-clear-log-btn">Clear Log</button>
+                    <button id="settings-close-btn">Close</button>
+                </div>
+            </div>
+
+            <div id="log-modal">
+                <h2>Game Log</h2>
+                <textarea id="log-output" readonly></textarea>
+                <div class="log-actions">
+                    <button id="log-copy-btn">Copy</button>
+                    <button id="log-close-btn">Close</button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -345,11 +550,25 @@
             const mergeSound = document.getElementById('merge-sound');
             const popSound = document.getElementById('pop-sound');
             const muteBtn = document.getElementById('mute-btn');
+            const settingsBtn = document.getElementById('settings-btn');
+            const settingsModal = document.getElementById('settings-modal');
+            const settingsCloseBtn = document.getElementById('settings-close-btn');
+            const settingsLogBtn = document.getElementById('settings-log-btn');
+            const settingsClearLogBtn = document.getElementById('settings-clear-log-btn');
+            const sfxToggle = document.getElementById('sfx-toggle');
+            const musicToggle = document.getElementById('music-toggle');
+            const logModal = document.getElementById('log-modal');
+            const logOutput = document.getElementById('log-output');
+            const logCloseBtn = document.getElementById('log-close-btn');
+            const logCopyBtn = document.getElementById('log-copy-btn');
             
             const STORAGE_KEY = 'cityMerge_bestScore';
+            const STORAGE_KEY_SETTINGS = 'cityMerge_settings_v1';
             
             let audioUnlocked = false;
             let isMuted = false;
+            let sfxEnabled = true;
+            let musicEnabled = true;
             const SIZE = 4;
             let grid = [];
             let score = 0;
@@ -423,7 +642,10 @@
             function ensureAudioContext() {
                 if (audioCtx) return;
                 const Ctx = window.AudioContext || window.webkitAudioContext;
-                if (!Ctx) return; // Very old browser
+                if (!Ctx) {
+                    logEvent('music', 'Web Audio API not supported (no AudioContext)');
+                    return; // Very old browser
+                }
 
                 audioCtx = new Ctx();
                 masterGain = audioCtx.createGain();
@@ -435,6 +657,12 @@
 
                 musicGain.connect(masterGain);
                 masterGain.connect(audioCtx.destination);
+
+                audioCtx.onstatechange = () => {
+                    logEvent('music', `AudioContext state -> ${audioCtx.state}`);
+                };
+
+                logEvent('music', `AudioContext created (state=${audioCtx.state})`);
             }
 
             function setWebAudioMuted(muted) {
@@ -471,64 +699,81 @@
 
             function scheduleMusic() {
                 if (!audioCtx || !musicState.isPlaying) return;
-                const secondsPerBeat = 60 / musicState.tempo;
+                try {
+                    const secondsPerBeat = 60 / musicState.tempo;
 
-                while (musicState.nextNoteTime < audioCtx.currentTime + musicState.scheduleAheadSec) {
-                    const m = MUSIC_MELODY[musicState.step % MUSIC_MELODY.length];
-                    const b = MUSIC_BASS[musicState.step % MUSIC_BASS.length];
+                    while (musicState.nextNoteTime < audioCtx.currentTime + musicState.scheduleAheadSec) {
+                        const m = MUSIC_MELODY[musicState.step % MUSIC_MELODY.length];
+                        const b = MUSIC_BASS[musicState.step % MUSIC_BASS.length];
 
-                    const start = musicState.nextNoteTime;
-                    const durSec = (m.dur || 1) * secondsPerBeat;
+                        const start = musicState.nextNoteTime;
+                        const durSec = (m.dur || 1) * secondsPerBeat;
 
-                    if (m.midi != null) {
-                        playOscNote({
-                            freq: midiToFreq(m.midi),
-                            type: 'square',
-                            startTime: start,
-                            durationSec: durSec * 0.98,
-                            gain: 0.08
-                        });
-                        // Soft harmony a fifth up, occasional (adds sparkle)
-                        if (musicState.step % 4 === 2) {
+                        if (m.midi != null) {
                             playOscNote({
-                                freq: midiToFreq(m.midi + 7),
+                                freq: midiToFreq(m.midi),
                                 type: 'square',
-                                startTime: start + 0.01,
-                                durationSec: durSec * 0.65,
-                                gain: 0.03
+                                startTime: start,
+                                durationSec: durSec * 0.98,
+                                gain: 0.08
+                            });
+                            // Soft harmony a fifth up, occasional (adds sparkle)
+                            if (musicState.step % 4 === 2) {
+                                playOscNote({
+                                    freq: midiToFreq(m.midi + 7),
+                                    type: 'square',
+                                    startTime: start + 0.01,
+                                    durationSec: durSec * 0.65,
+                                    gain: 0.03
+                                });
+                            }
+                        }
+
+                        if (b.midi != null) {
+                            playOscNote({
+                                freq: midiToFreq(b.midi),
+                                type: 'triangle',
+                                startTime: start,
+                                durationSec: secondsPerBeat * 0.95,
+                                gain: 0.05
                             });
                         }
-                    }
 
-                    if (b.midi != null) {
-                        playOscNote({
-                            freq: midiToFreq(b.midi),
-                            type: 'triangle',
-                            startTime: start,
-                            durationSec: secondsPerBeat * 0.95,
-                            gain: 0.05
-                        });
+                        musicState.nextNoteTime += durSec;
+                        musicState.step++;
                     }
-
-                    musicState.nextNoteTime += durSec;
-                    musicState.step++;
+                } catch (e) {
+                    logEvent('music', `scheduleMusic error: ${e && e.message ? e.message : e}`);
+                    stopMusic();
                 }
             }
 
             function startMusic() {
                 ensureAudioContext();
                 if (!audioCtx || musicState.isPlaying) return;
-                if (isMuted) return;
+                if (isMuted) {
+                    logEvent('music', 'startMusic skipped: master muted');
+                    return;
+                }
+                if (!musicEnabled) {
+                    logEvent('music', 'startMusic skipped: music disabled in settings');
+                    return;
+                }
 
                 // Resume context if needed (autoplay policies).
                 if (audioCtx.state === 'suspended') {
-                    audioCtx.resume().catch(() => {});
+                    audioCtx.resume().then(() => {
+                        logEvent('music', 'AudioContext resume() ok');
+                    }).catch((e) => {
+                        logEvent('music', `AudioContext resume() failed: ${e && e.message ? e.message : e}`);
+                    });
                 }
 
                 musicState.isPlaying = true;
                 musicState.step = 0;
                 musicState.nextNoteTime = audioCtx.currentTime + 0.05;
                 musicState.timerId = setInterval(scheduleMusic, musicState.lookaheadMs);
+                logEvent('music', `Music started (ctxState=${audioCtx.state}, tempo=${musicState.tempo})`);
             }
 
             function stopMusic() {
@@ -538,17 +783,101 @@
                     clearInterval(musicState.timerId);
                     musicState.timerId = null;
                 }
+                logEvent('music', 'Music stopped');
             }
 
-            function toggleMute() {
-                isMuted = !isMuted;
+            // --- In-game log (for debugging, especially audio on GitHub Pages) ---
+            const LOG_MAX = 250;
+            const gameLog = [];
+
+            function formatTime(d) {
+                const pad = (n) => String(n).padStart(2, '0');
+                return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+            }
+
+            function logEvent(tag, message) {
+                const line = `[${formatTime(new Date())}] [${tag}] ${message}`;
+                gameLog.push(line);
+                if (gameLog.length > LOG_MAX) gameLog.shift();
+                if (logModal.classList.contains('show')) {
+                    renderLog();
+                }
+                // Also mirror to devtools if available.
+                try { console.log(line); } catch (e) {}
+            }
+
+            function renderLog() {
+                logOutput.value = gameLog.join('\n');
+                logOutput.scrollTop = logOutput.scrollHeight;
+            }
+
+            function clearLog() {
+                gameLog.length = 0;
+                renderLog();
+                logEvent('log', 'Log cleared');
+            }
+
+            function showLog() {
+                renderLog();
+                logModal.classList.add('show');
+            }
+
+            function hideLog() {
+                logModal.classList.remove('show');
+            }
+
+            function showSettings() {
+                settingsModal.classList.add('show');
+            }
+
+            function hideSettings() {
+                settingsModal.classList.remove('show');
+            }
+
+            function loadSettings() {
+                const raw = safeGetItem(STORAGE_KEY_SETTINGS);
+                if (!raw) return;
+                try {
+                    const s = JSON.parse(raw);
+                    if (typeof s.isMuted === 'boolean') isMuted = s.isMuted;
+                    if (typeof s.sfxEnabled === 'boolean') sfxEnabled = s.sfxEnabled;
+                    if (typeof s.musicEnabled === 'boolean') musicEnabled = s.musicEnabled;
+                } catch (e) {
+                    // ignore
+                }
+            }
+
+            function saveSettings() {
+                safeSetItem(STORAGE_KEY_SETTINGS, JSON.stringify({ isMuted, sfxEnabled, musicEnabled }));
+            }
+
+            function updateSettingsUI() {
                 muteBtn.textContent = isMuted ? '🔇' : '🔊';
+                sfxToggle.checked = !!sfxEnabled;
+                musicToggle.checked = !!musicEnabled;
+            }
+
+            function updateAudioRouting() {
+                // HTMLAudio SFX
+                const sfxMuted = isMuted || !sfxEnabled;
+                mergeSound.muted = sfxMuted;
+                popSound.muted = sfxMuted;
+
+                // WebAudio music
                 setWebAudioMuted(isMuted);
-                if (isMuted) {
+                if (isMuted || !musicEnabled) {
                     stopMusic();
                 } else if (audioUnlocked) {
                     startMusic();
                 }
+            }
+
+            function toggleMute() {
+                isMuted = !isMuted;
+                updateSettingsUI();
+                saveSettings();
+                updateAudioRouting();
+                logEvent('audio', `Master mute -> ${isMuted ? 'on' : 'off'}`);
             }
 
             function safeGetItem(key) {
@@ -587,35 +916,45 @@
             }
 
             function unlockAudio() {
+                logEvent('audio', `unlockAudio (muted=${isMuted}, sfx=${sfxEnabled}, music=${musicEnabled})`);
                 ensureAudioContext();
                 if (audioCtx && audioCtx.state === 'suspended') {
-                    audioCtx.resume().catch(() => {});
+                    audioCtx.resume().then(() => {
+                        logEvent('music', 'AudioContext resume() ok (unlockAudio)');
+                    }).catch((e) => {
+                        logEvent('music', `AudioContext resume() failed (unlockAudio): ${e && e.message ? e.message : e}`);
+                    });
                 }
 
                 // If we've already unlocked, still ensure music is running when unmuted.
                 if (audioUnlocked) {
-                    if (!isMuted) startMusic();
+                    updateAudioRouting();
                     return;
                 }
                 
-                if (!isMuted) {
+                if (!isMuted && sfxEnabled) {
                     const popPromise = popSound.play();
                     if (popPromise !== undefined) {
                         popPromise.then(() => {
                             popSound.pause();
                             popSound.currentTime = 0;
-                        }).catch(error => {});
+                        }).catch(error => {
+                            logEvent('sfx', `popSound unlock play failed: ${error && error.message ? error.message : error}`);
+                        });
                     }
                     const mergePromise = mergeSound.play();
                     if (mergePromise !== undefined) {
                         mergePromise.then(() => {
                             mergeSound.pause();
                             mergeSound.currentTime = 0;
-                        }).catch(error => {});
+                        }).catch(error => {
+                            logEvent('sfx', `mergeSound unlock play failed: ${error && error.message ? error.message : error}`);
+                        });
                     }
                 }
                 audioUnlocked = true;
-                if (!isMuted) startMusic();
+                logEvent('audio', 'Audio unlocked');
+                updateAudioRouting();
             }
             
             function showHelp() {
@@ -688,6 +1027,7 @@
                 resizeCanvas();
                 // Start glow animation (tiles are level 1, no glow yet, but ready for later)
                 startGlowAnimation();
+                logEvent('game', 'New game started');
             }
 
             function getCellPosition(r, c) {
@@ -1177,7 +1517,7 @@
                     const { r, c } = emptyCells[Math.floor(Math.random() * emptyCells.length)];
                     grid[r][c] = 1; // Always spawn a Level 1 tile (Tent)
                     newTile = { r, c, scale: 0 };
-                    if (audioUnlocked && !isMuted && !silent) {
+                    if (audioUnlocked && !isMuted && sfxEnabled && !silent) {
                         popSound.currentTime = 0;
                         popSound.play();
                     }
@@ -1352,7 +1692,7 @@
                     grid = newGrid;
                     updateScore(score + scoreIncrease);
                     
-                    if (hadMerge && audioUnlocked && !isMuted) {
+                    if (hadMerge && audioUnlocked && !isMuted && sfxEnabled) {
                         mergeSound.currentTime = 0;
                         mergeSound.play();
                     }
@@ -1390,6 +1730,8 @@
                 if (isMoving) return;
                 unlockAudio();
                 stopGlowAnimation();
+
+                logEvent('input', `Move: ${direction}`);
                 
                 const moved = moveGrid(direction);
                 if (!moved) {
@@ -1640,9 +1982,63 @@
             helpBtn.addEventListener('click', showHelp);
             helpCloseBtn.addEventListener('click', hideHelp);
             muteBtn.addEventListener('click', toggleMute);
+            settingsBtn.addEventListener('click', () => {
+                unlockAudio();
+                showSettings();
+                logEvent('ui', 'Settings opened');
+            });
+            settingsCloseBtn.addEventListener('click', () => {
+                hideSettings();
+                logEvent('ui', 'Settings closed');
+            });
+            settingsLogBtn.addEventListener('click', () => {
+                showLog();
+                logEvent('ui', 'Log opened');
+            });
+            settingsClearLogBtn.addEventListener('click', clearLog);
+            logCloseBtn.addEventListener('click', () => {
+                hideLog();
+                logEvent('ui', 'Log closed');
+            });
+            logCopyBtn.addEventListener('click', async () => {
+                const text = gameLog.join('\n');
+                try {
+                    await navigator.clipboard.writeText(text);
+                    logEvent('ui', 'Log copied to clipboard');
+                } catch (e) {
+                    // Fallback: select the textarea for manual copy
+                    logOutput.focus();
+                    logOutput.select();
+                    logEvent('ui', 'Clipboard copy failed; selected log for manual copy');
+                }
+            });
+            sfxToggle.addEventListener('change', () => {
+                sfxEnabled = !!sfxToggle.checked;
+                saveSettings();
+                updateAudioRouting();
+                logEvent('audio', `SFX -> ${sfxEnabled ? 'on' : 'off'}`);
+            });
+            musicToggle.addEventListener('change', () => {
+                musicEnabled = !!musicToggle.checked;
+                saveSettings();
+                updateAudioRouting();
+                logEvent('audio', `Music -> ${musicEnabled ? 'on' : 'off'}`);
+            });
             window.addEventListener('resize', resizeCanvas);
+            document.addEventListener('visibilitychange', () => {
+                logEvent('page', `visibility -> ${document.visibilityState}`);
+                // Many browsers auto-suspend audio on hidden tabs; try resuming when visible.
+                if (document.visibilityState === 'visible' && audioUnlocked) {
+                    updateAudioRouting();
+                }
+            });
 
             // --- Start the game ---
+            logEvent('boot', `href=${window.location.href}`);
+            logEvent('boot', `ua=${navigator.userAgent}`);
+            loadSettings();
+            updateSettingsUI();
+            updateAudioRouting();
             setupGame();
         });
     </script>

@@ -39,6 +39,7 @@ The buildings evolve as you merge them, starting from a simple tent and growing 
 - **Touch Controls:** In addition to keyboard controls, you can play the game by swiping on touch-enabled devices.
 - **Sound Effects:** Satisfying sounds for merges and new tiles (with mute option).
 - **Background Music:** Retro chiptune-style music generated in JavaScript (Web Audio). Starts after your first input (browser autoplay rules) and follows the mute toggle.
+- **Settings & Debug Log:** A settings panel (⚙️) lets you toggle **Sound Effects** and **Background Music** separately, and view/copy an in-game **Game Log** (useful for diagnosing audio issues on hosted pages like GitHub Pages).
 
 ### Visual Effects & "Game Juice"
 
