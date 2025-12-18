@@ -762,6 +762,99 @@
     ];
   }
 
+  function jingleBells() {
+    // Public domain (traditional Christmas). Key: C. Chorus only.
+    return [
+      // "Jingle bells, jingle bells, jingle all the way"
+      { midi: 76, dur: 1 }, { midi: 76, dur: 1 }, { midi: 76, dur: 2 },
+      { midi: 76, dur: 1 }, { midi: 76, dur: 1 }, { midi: 76, dur: 2 },
+      { midi: 76, dur: 1 }, { midi: 79, dur: 1 }, { midi: 72, dur: 1.5 }, { midi: 74, dur: 0.5 },
+      { midi: 76, dur: 4 },
+      // "Oh what fun it is to ride in a one horse open sleigh"
+      { midi: 77, dur: 1 }, { midi: 77, dur: 1 }, { midi: 77, dur: 1.5 }, { midi: 77, dur: 0.5 },
+      { midi: 77, dur: 1 }, { midi: 76, dur: 1 }, { midi: 76, dur: 1 }, { midi: 76, dur: 0.5 }, { midi: 76, dur: 0.5 },
+      { midi: 76, dur: 1 }, { midi: 74, dur: 1 }, { midi: 74, dur: 1 }, { midi: 76, dur: 1 },
+      { midi: 74, dur: 2 }, { midi: 79, dur: 2 }
+    ];
+  }
+
+  function weWishYouAMerryChristmas() {
+    // Public domain (traditional Christmas). Key: C.
+    return [
+      // "We wish you a merry Christmas"
+      { midi: 72, dur: 1 }, { midi: 77, dur: 1 }, { midi: 77, dur: 0.5 }, { midi: 78, dur: 0.5 },
+      { midi: 77, dur: 0.5 }, { midi: 76, dur: 0.5 }, { midi: 74, dur: 1 }, { midi: 74, dur: 1 }, { midi: 74, dur: 1 },
+      // "We wish you a merry Christmas"
+      { midi: 74, dur: 1 }, { midi: 79, dur: 1 }, { midi: 79, dur: 0.5 }, { midi: 80, dur: 0.5 },
+      { midi: 79, dur: 0.5 }, { midi: 77, dur: 0.5 }, { midi: 76, dur: 1 }, { midi: 72, dur: 1 }, { midi: 72, dur: 1 },
+      // "We wish you a merry Christmas"
+      { midi: 76, dur: 1 }, { midi: 81, dur: 1 }, { midi: 81, dur: 0.5 }, { midi: 82, dur: 0.5 },
+      { midi: 81, dur: 0.5 }, { midi: 79, dur: 0.5 }, { midi: 77, dur: 1 }, { midi: 74, dur: 1 }, { midi: 72, dur: 1 },
+      // "And a happy new year"
+      { midi: 72, dur: 1 }, { midi: 74, dur: 1 }, { midi: 79, dur: 1 }, { midi: 77, dur: 1 },
+      { midi: 76, dur: 2 }, { midi: 72, dur: 2 }
+    ];
+  }
+
+  function deckTheHalls() {
+    // Public domain (traditional Christmas). Key: F (transposed to C here).
+    return [
+      // "Deck the halls with boughs of holly"
+      { midi: 72, dur: 1 }, { midi: 74, dur: 0.5 }, { midi: 76, dur: 0.5 }, { midi: 77, dur: 1 }, { midi: 76, dur: 1 },
+      { midi: 74, dur: 1 }, { midi: 72, dur: 1 }, { midi: 71, dur: 1 }, { midi: 69, dur: 1 },
+      // "Fa la la la la, la la la la"
+      { midi: 69, dur: 1 }, { midi: 76, dur: 1 }, { midi: 74, dur: 1 }, { midi: 72, dur: 1 },
+      { midi: 74, dur: 2 }, { midi: 72, dur: 2 },
+      // "'Tis the season to be jolly"
+      { midi: 72, dur: 1 }, { midi: 74, dur: 0.5 }, { midi: 76, dur: 0.5 }, { midi: 77, dur: 1 }, { midi: 76, dur: 1 },
+      { midi: 74, dur: 1 }, { midi: 72, dur: 1 }, { midi: 71, dur: 1 }, { midi: 69, dur: 1 },
+      // "Fa la la la la, la la la la"
+      { midi: 69, dur: 1 }, { midi: 76, dur: 1 }, { midi: 74, dur: 1 }, { midi: 72, dur: 1 },
+      { midi: 74, dur: 2 }, { midi: 72, dur: 2 }
+    ];
+  }
+
+  function silentNight() {
+    // Public domain (traditional Christmas). Key: C.
+    return [
+      // "Silent night, holy night"
+      { midi: 79, dur: 1.5 }, { midi: 79, dur: 0.5 }, { midi: 76, dur: 2 },
+      { midi: 79, dur: 1.5 }, { midi: 79, dur: 0.5 }, { midi: 76, dur: 2 },
+      // "All is calm, all is bright"
+      { midi: 83, dur: 1.5 }, { midi: 83, dur: 0.5 }, { midi: 81, dur: 2 },
+      { midi: 79, dur: 1.5 }, { midi: 79, dur: 0.5 }, { midi: 77, dur: 2 },
+      // "Round yon virgin mother and child"
+      { midi: 72, dur: 1.5 }, { midi: 72, dur: 0.5 }, { midi: 79, dur: 1.5 }, { midi: 77, dur: 0.5 },
+      { midi: 76, dur: 2 },
+      // "Holy infant so tender and mild"
+      { midi: 72, dur: 1.5 }, { midi: 72, dur: 0.5 }, { midi: 79, dur: 1.5 }, { midi: 77, dur: 0.5 },
+      { midi: 76, dur: 2 },
+      // "Sleep in heavenly peace"
+      { midi: 81, dur: 1.5 }, { midi: 81, dur: 0.5 }, { midi: 83, dur: 2 },
+      { midi: 79, dur: 1.5 }, { midi: 77, dur: 0.5 }, { midi: 76, dur: 2.5 }, { midi: 74, dur: 0.5 },
+      // "Sleep in heavenly peace"
+      { midi: 72, dur: 4 }
+    ];
+  }
+
+  function joyToTheWorld() {
+    // Public domain (traditional Christmas). Key: C.
+    return [
+      // "Joy to the world, the Lord is come"
+      { midi: 84, dur: 1.5 }, { midi: 83, dur: 0.5 }, { midi: 81, dur: 1 }, { midi: 79, dur: 1 },
+      { midi: 77, dur: 1.5 }, { midi: 76, dur: 0.5 }, { midi: 74, dur: 1 }, { midi: 72, dur: 1 },
+      // "Let earth receive her King"
+      { midi: 69, dur: 1 }, { midi: 69, dur: 1 }, { midi: 71, dur: 1.5 }, { midi: 72, dur: 0.5 },
+      { midi: 72, dur: 2 },
+      // "Let every heart prepare Him room"
+      { midi: 79, dur: 1 }, { midi: 79, dur: 1 }, { midi: 79, dur: 1 }, { midi: 77, dur: 1 },
+      { midi: 76, dur: 1 }, { midi: 76, dur: 1 }, { midi: 76, dur: 1 }, { midi: 74, dur: 1 },
+      // "And heaven and nature sing"
+      { midi: 72, dur: 1 }, { midi: 72, dur: 1 }, { midi: 74, dur: 1 }, { midi: 76, dur: 1 },
+      { midi: 79, dur: 2 }, { midi: 84, dur: 2 }
+    ];
+  }
+
   function publicDomainTunes() {
     // Provide a ready-to-use shuffled playlist source with different instruments.
     return [
@@ -770,6 +863,11 @@
       { name: 'Mary Had a Little Lamb', melody: maryHadALittleLamb(), tempo: 110, instrument: 'bell' },
       { name: 'Ode to Joy', melody: odeToJoy(), tempo: 100, instrument: 'saxophone' },
       { name: 'Row Row Row Your Boat', melody: rowRowRowYourBoat(), tempo: 95, instrument: 'flute' },
+      { name: 'Jingle Bells', melody: jingleBells(), tempo: 110, instrument: 'bell' },
+      { name: 'We Wish You a Merry Christmas', melody: weWishYouAMerryChristmas(), tempo: 120, instrument: 'flute' },
+      { name: 'Deck the Halls', melody: deckTheHalls(), tempo: 115, instrument: 'piano' },
+      { name: 'Silent Night', melody: silentNight(), tempo: 80, instrument: 'saxophone' },
+      { name: 'Joy to the World', melody: joyToTheWorld(), tempo: 100, instrument: 'bell' },
       { name: 'Twinkle Twinkle Little Star', melody: twinkleTwinkle(), tempo: 105, instrument: 'piano' },
       { name: 'Frère Jacques', melody: frereJacques(), tempo: 100, instrument: 'saxophone' },
       { name: 'Mary Had a Little Lamb', melody: maryHadALittleLamb(), tempo: 115, instrument: 'flute' },
@@ -786,7 +884,12 @@
       frereJacques: frereJacques,
       maryHadALittleLamb: maryHadALittleLamb,
       odeToJoy: odeToJoy,
-      rowRowRowYourBoat: rowRowRowYourBoat
+      rowRowRowYourBoat: rowRowRowYourBoat,
+      jingleBells: jingleBells,
+      weWishYouAMerryChristmas: weWishYouAMerryChristmas,
+      deckTheHalls: deckTheHalls,
+      silentNight: silentNight,
+      joyToTheWorld: joyToTheWorld
     },
     bassPatterns: {
       simple: simpleBass
