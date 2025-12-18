@@ -218,29 +218,79 @@
       var durationSec = note.durationSec;
       var gain = note.gain;
 
-      var osc = ctx.createOscillator();
-      var amp = ctx.createGain();
+      // Create a flute-like sound with harmonics
+      var masterAmp = ctx.createGain();
+      var filter = ctx.createBiquadFilter();
+      
+      // Low-pass filter for warm, mellow tone
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(2000 + freq * 0.5, startTime);
+      filter.Q.setValueAtTime(1, startTime);
 
-      osc.type = type;
-      osc.frequency.setValueAtTime(freq, startTime);
+      // Fundamental frequency (sine wave)
+      var osc1 = ctx.createOscillator();
+      var amp1 = ctx.createGain();
+      osc1.type = 'sine';
+      osc1.frequency.setValueAtTime(freq, startTime);
+      amp1.gain.setValueAtTime(0.6, startTime); // Main tone
+      
+      // Second harmonic (octave) - very subtle
+      var osc2 = ctx.createOscillator();
+      var amp2 = ctx.createGain();
+      osc2.type = 'sine';
+      osc2.frequency.setValueAtTime(freq * 2, startTime);
+      amp2.gain.setValueAtTime(0.1, startTime);
+      
+      // Third harmonic - gives flute character
+      var osc3 = ctx.createOscillator();
+      var amp3 = ctx.createGain();
+      osc3.type = 'sine';
+      osc3.frequency.setValueAtTime(freq * 3, startTime);
+      amp3.gain.setValueAtTime(0.15, startTime);
 
-      // Gentle attack + longer release for smooth, soothing sound.
-      var attack = 0.02; // Slower attack for softer onset
-      var release = Math.min(0.15, durationSec * 0.5); // Longer release for smooth fade
+      // Add subtle vibrato for expressiveness
+      var vibrato = ctx.createOscillator();
+      var vibratoGain = ctx.createGain();
+      vibrato.frequency.setValueAtTime(5, startTime); // 5 Hz vibrato
+      vibratoGain.gain.setValueAtTime(3, startTime); // Subtle pitch modulation
+      vibrato.connect(vibratoGain);
+      vibratoGain.connect(osc1.frequency);
+      vibratoGain.connect(osc2.frequency);
+      vibratoGain.connect(osc3.frequency);
+
+      // Breath-like attack with gentle onset
+      var attack = 0.08; // Slower attack mimics breath
+      var release = Math.min(0.2, durationSec * 0.6); // Gentle release
       var sustainTime = Math.max(0, durationSec - attack - release);
 
-      amp.gain.setValueAtTime(0.0001, startTime);
-      amp.gain.exponentialRampToValueAtTime(Math.max(0.0002, gain), startTime + attack);
+      masterAmp.gain.setValueAtTime(0.0001, startTime);
+      masterAmp.gain.exponentialRampToValueAtTime(Math.max(0.0002, gain), startTime + attack);
       if (sustainTime > 0) {
-        amp.gain.setValueAtTime(Math.max(0.0002, gain), startTime + attack + sustainTime);
+        masterAmp.gain.setValueAtTime(Math.max(0.0002, gain), startTime + attack + sustainTime);
       }
-      amp.gain.exponentialRampToValueAtTime(0.0001, startTime + durationSec);
+      masterAmp.gain.exponentialRampToValueAtTime(0.0001, startTime + durationSec);
 
-      osc.connect(amp);
-      amp.connect(musicGain);
+      // Connect oscillators through filter
+      osc1.connect(amp1);
+      osc2.connect(amp2);
+      osc3.connect(amp3);
+      amp1.connect(filter);
+      amp2.connect(filter);
+      amp3.connect(filter);
+      filter.connect(masterAmp);
+      masterAmp.connect(musicGain);
 
-      osc.start(startTime);
-      osc.stop(startTime + durationSec + 0.02);
+      // Start all oscillators
+      osc1.start(startTime);
+      osc2.start(startTime);
+      osc3.start(startTime);
+      vibrato.start(startTime);
+      
+      // Stop all oscillators
+      osc1.stop(startTime + durationSec + 0.02);
+      osc2.stop(startTime + durationSec + 0.02);
+      osc3.stop(startTime + durationSec + 0.02);
+      vibrato.stop(startTime + durationSec + 0.02);
     }
 
     function schedule() {
