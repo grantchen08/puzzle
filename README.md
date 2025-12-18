@@ -38,7 +38,7 @@ The buildings evolve as you merge them, starting from a simple tent and growing 
 - **Game Over State:** The game clearly indicates when the game is over, celebrates new records, and provides an option to try again.
 - **Touch Controls:** In addition to keyboard controls, you can play the game by swiping on touch-enabled devices.
 - **Sound Effects:** Satisfying sounds for merges and new tiles (with mute option).
-- **Background Music:** Retro chiptune-style music generated in JavaScript (Web Audio). Plays a **shuffled playlist of public-domain tunes** (e.g. **Twinkle Twinkle Little Star**, **Frère Jacques**, **Mary Had a Little Lamb**, **Ode to Joy**, **Row Row Row Your Boat**). Starts after your first input (browser autoplay rules) and follows the mute toggle.
+- **Background Music:** Soothing, music-box-style melodies generated in JavaScript (Web Audio). Plays a **shuffled playlist of public-domain tunes** (e.g. **Twinkle Twinkle Little Star**, **Frère Jacques**, **Mary Had a Little Lamb**, **Ode to Joy**, **Row Row Row Your Boat**). Uses gentle sine waves with smooth envelopes and slower tempos for a peaceful, relaxing experience. Starts after your first input (browser autoplay rules) and follows the mute toggle.
 - **Settings & Debug Log:** A settings panel (⚙️) lets you toggle **Sound Effects** and **Background Music** separately, and view/copy an in-game **Game Log** (useful for diagnosing audio issues on hosted pages like GitHub Pages).
 
 ### Visual Effects & "Game Juice"

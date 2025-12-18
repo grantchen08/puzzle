@@ -224,9 +224,9 @@
       osc.type = type;
       osc.frequency.setValueAtTime(freq, startTime);
 
-      // Quick attack + short release for classic bleep feel.
-      var attack = 0.005;
-      var release = Math.min(0.06, durationSec * 0.35);
+      // Gentle attack + longer release for smooth, soothing sound.
+      var attack = 0.02; // Slower attack for softer onset
+      var release = Math.min(0.15, durationSec * 0.5); // Longer release for smooth fade
       var sustainTime = Math.max(0, durationSec - attack - release);
 
       amp.gain.setValueAtTime(0.0001, startTime);
@@ -260,10 +260,10 @@
           if (m && m.midi != null) {
             playOscNote({
               freq: midiToFreq(m.midi),
-              type: 'square',
+              type: 'sine', // Sine wave for smooth, mellow tone
               startTime: start,
               durationSec: durSec * 0.98,
-              gain: 0.08
+              gain: 0.06 // Slightly reduced for gentler sound
             });
           }
 
@@ -272,10 +272,10 @@
             var bDurSec = bDurBeats * secondsPerBeat;
             playOscNote({
               freq: midiToFreq(b.midi),
-              type: 'triangle',
+              type: 'sine', // Sine wave for smooth bass
               startTime: start,
               durationSec: bDurSec * 0.95,
-              gain: 0.05
+              gain: 0.04 // Slightly reduced for subtler accompaniment
             });
           }
 
@@ -488,11 +488,11 @@
   function publicDomainTunes() {
     // Provide a ready-to-use shuffled playlist source.
     return [
-      { name: 'Twinkle Twinkle Little Star', melody: twinkleTwinkle(), tempo: 120 },
-      { name: 'Frère Jacques', melody: frereJacques(), tempo: 120 },
-      { name: 'Mary Had a Little Lamb', melody: maryHadALittleLamb(), tempo: 132 },
-      { name: 'Ode to Joy', melody: odeToJoy(), tempo: 120 },
-      { name: 'Row Row Row Your Boat', melody: rowRowRowYourBoat(), tempo: 120 }
+      { name: 'Twinkle Twinkle Little Star', melody: twinkleTwinkle(), tempo: 100 }, // Slower, more peaceful
+      { name: 'Frère Jacques', melody: frereJacques(), tempo: 105 },
+      { name: 'Mary Had a Little Lamb', melody: maryHadALittleLamb(), tempo: 110 },
+      { name: 'Ode to Joy', melody: odeToJoy(), tempo: 100 },
+      { name: 'Row Row Row Your Boat', melody: rowRowRowYourBoat(), tempo: 95 }
     ];
   }
 
