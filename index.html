@@ -45,10 +45,33 @@
             width: 100%;
         }
 
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
         h1 {
             font-size: 2.5rem;
             margin: 0;
             font-weight: 700;
+        }
+
+        #theme-selector {
+            background-color: #8b7969;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            font-family: var(--font-family);
+        }
+
+        #theme-selector:hover {
+            background-color: #9c8a7a;
         }
 
         .controls {
@@ -425,8 +448,26 @@
             transition: background-color 0.2s ease;
         }
 
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .header-left {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .controls {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+        }
+
         @media (max-width: 480px) {
-            h1 { font-size: 2rem; }
+            h1 { font-size: 1.8rem; }
+            #theme-selector { font-size: 0.8rem; padding: 6px 10px; }
             .score-container { padding: 5px 15px; }
             #score { font-size: 1.2rem; }
             #new-game-btn, #try-again-btn, #help-btn, #help-close-btn, #mute-btn, #settings-btn,
@@ -446,7 +487,13 @@
 
     <div class="game-container">
         <div class="header">
-            <h1>City Merge</h1>
+            <div class="header-left">
+                <h1 id="game-title">City Merge</h1>
+                <select id="theme-selector">
+                    <option value="christmas">🎄 Christmas</option>
+                    <option value="city">🏙️ City</option>
+                </select>
+            </div>
             <div class="controls">
                 <div class="score-container">
                     <div class="score-title">SCORE</div>
@@ -562,9 +609,15 @@
             const logOutput = document.getElementById('log-output');
             const logCloseBtn = document.getElementById('log-close-btn');
             const logCopyBtn = document.getElementById('log-copy-btn');
+            const themeSelector = document.getElementById('theme-selector');
+            const gameTitle = document.getElementById('game-title');
             
-            const STORAGE_KEY = 'cityMerge_bestScore';
-            const STORAGE_KEY_SETTINGS = 'cityMerge_settings_v1';
+            const STORAGE_KEY_PREFIX = 'cityMerge_bestScore';
+            const STORAGE_KEY_SETTINGS = 'cityMerge_settings_v2';
+            
+            function getStorageKey() {
+                return `${STORAGE_KEY_PREFIX}_${currentTheme}`;
+            }
             
             let audioUnlocked = false;
             let isMuted = false;
@@ -614,8 +667,14 @@
                     return;
                 }
 
+                const themeConfig = THEMES[currentTheme];
+                const playlistKey = themeConfig.musicPlaylist;
+                const playlist = window.ChiptuneMusic.tunes && window.ChiptuneMusic.tunes[playlistKey] 
+                    ? window.ChiptuneMusic.tunes[playlistKey]() 
+                    : (window.ChiptuneMusic.tunes.publicDomain ? window.ChiptuneMusic.tunes.publicDomain() : []);
+
                 musicPlayer = window.ChiptuneMusic.createPlayer({
-                    playlist: window.ChiptuneMusic.tunes && window.ChiptuneMusic.tunes.publicDomain ? window.ChiptuneMusic.tunes.publicDomain() : [],
+                    playlist: playlist,
                     shufflePlaylist: true,
                     bass: window.ChiptuneMusic.bassPatterns.simple(),
                     tempo: 120, // fallback
@@ -714,13 +773,22 @@
                     if (typeof s.isMuted === 'boolean') isMuted = s.isMuted;
                     if (typeof s.sfxEnabled === 'boolean') sfxEnabled = s.sfxEnabled;
                     if (typeof s.musicEnabled === 'boolean') musicEnabled = s.musicEnabled;
+                    if (typeof s.theme === 'string' && THEMES[s.theme]) {
+                        currentTheme = s.theme;
+                        themeSelector.value = currentTheme;
+                    }
                 } catch (e) {
                     // ignore
                 }
             }
 
             function saveSettings() {
-                safeSetItem(STORAGE_KEY_SETTINGS, JSON.stringify({ isMuted, sfxEnabled, musicEnabled }));
+                safeSetItem(STORAGE_KEY_SETTINGS, JSON.stringify({ 
+                    isMuted, 
+                    sfxEnabled, 
+                    musicEnabled, 
+                    theme: currentTheme 
+                }));
             }
 
             function updateSettingsUI() {
@@ -772,7 +840,7 @@
             }
 
             function loadBestScore() {
-                const saved = safeGetItem(STORAGE_KEY);
+                const saved = safeGetItem(getStorageKey());
                 bestScore = saved ? parseInt(saved, 10) : 0;
                 bestScoreDisplay.textContent = bestScore;
             }
@@ -780,7 +848,7 @@
             function saveBestScore() {
                 if (score > bestScore) {
                     bestScore = score;
-                    safeSetItem(STORAGE_KEY, String(bestScore));
+                    safeSetItem(getStorageKey(), String(bestScore));
                     bestScoreDisplay.textContent = bestScore;
                     return true; // New record!
                 }
@@ -831,18 +899,44 @@
                 helpModal.classList.remove('show');
             }
 
-            const TILE_DATA = [
-                { emoji: '⛺', score: 2, color: '#eee4da', glow: null },   // Level 1 - no glow
-                { emoji: '🛖', score: 4, color: '#ede0c8', glow: null },   // Level 2 - no glow
-                { emoji: '🏠', score: 8, color: '#f2b179', glow: null },   // Level 3 - no glow
-                { emoji: '🏡', score: 16, color: '#f59563', glow: null },  // Level 4 - no glow
-                { emoji: '🏢', score: 32, color: '#f67c5f', glow: '#ff6b6b' },  // Level 5 - red glow
-                { emoji: '🏙️', score: 64, color: '#f65e3b', glow: '#ff4757' },  // Level 6 - bright red
-                { emoji: '🏰', score: 128, color: '#edcf72', glow: '#ffa502' }, // Level 7 - orange
-                { emoji: '🏛️', score: 256, color: '#edcc61', glow: '#ffdd59' }, // Level 8 - yellow
-                { emoji: '🗼', score: 512, color: '#edc850', glow: '#fff200' }, // Level 9 - bright yellow
-                { emoji: '🚀', score: 1024, color: '#edc53f', glow: '#00ff88' } // Level 10 - neon green!
-            ];
+            // Theme definitions
+            const THEMES = {
+                city: {
+                    name: 'City Merge',
+                    tiles: [
+                        { emoji: '⛺', score: 2, color: '#eee4da', glow: null },   // Level 1 - no glow
+                        { emoji: '🛖', score: 4, color: '#ede0c8', glow: null },   // Level 2 - no glow
+                        { emoji: '🏠', score: 8, color: '#f2b179', glow: null },   // Level 3 - no glow
+                        { emoji: '🏡', score: 16, color: '#f59563', glow: null },  // Level 4 - no glow
+                        { emoji: '🏢', score: 32, color: '#f67c5f', glow: '#ff6b6b' },  // Level 5 - red glow
+                        { emoji: '🏙️', score: 64, color: '#f65e3b', glow: '#ff4757' },  // Level 6 - bright red
+                        { emoji: '🏰', score: 128, color: '#edcf72', glow: '#ffa502' }, // Level 7 - orange
+                        { emoji: '🏛️', score: 256, color: '#edcc61', glow: '#ffdd59' }, // Level 8 - yellow
+                        { emoji: '🗼', score: 512, color: '#edc850', glow: '#fff200' }, // Level 9 - bright yellow
+                        { emoji: '🚀', score: 1024, color: '#edc53f', glow: '#00ff88' } // Level 10 - neon green!
+                    ],
+                    musicPlaylist: 'city'
+                },
+                christmas: {
+                    name: 'Christmas Merge',
+                    tiles: [
+                        { emoji: '🕯️', score: 2, color: '#fff8dc', glow: null },   // Level 1 - Candle
+                        { emoji: '🔔', score: 4, color: '#ffd700', glow: null },   // Level 2 - Bell
+                        { emoji: '🎁', score: 8, color: '#ff6b9d', glow: null },   // Level 3 - Gift
+                        { emoji: '⛄', score: 16, color: '#e0f7ff', glow: null },  // Level 4 - Snowman
+                        { emoji: '🎅', score: 32, color: '#ff4444', glow: '#ff6b6b' },  // Level 5 - Santa - red glow
+                        { emoji: '🤶', score: 64, color: '#ff3333', glow: '#ff4757' },  // Level 6 - Mrs. Claus - bright red
+                        { emoji: '🦌', score: 128, color: '#8B4513', glow: '#ffa502' }, // Level 7 - Reindeer - orange
+                        { emoji: '🎄', score: 256, color: '#228B22', glow: '#32CD32' }, // Level 8 - Christmas Tree - green
+                        { emoji: '⭐', score: 512, color: '#FFD700', glow: '#fff200' }, // Level 9 - Star - bright yellow
+                        { emoji: '❄️', score: 1024, color: '#B0E0E6', glow: '#00ffff' } // Level 10 - Snowflake - cyan
+                    ],
+                    musicPlaylist: 'christmas'
+                }
+            };
+
+            let currentTheme = 'christmas';
+            let TILE_DATA = THEMES[currentTheme].tiles;
 
             // Easing functions for smooth animations
             function easeOutQuad(t) {
@@ -891,9 +985,47 @@
                 addRandomTile(true);
                 addRandomTile(true);
                 resizeCanvas();
+                // Update help modal content based on theme
+                updateHelpModalContent();
                 // Start glow animation (tiles are level 1, no glow yet, but ready for later)
                 startGlowAnimation();
                 logEvent('game', 'New game started');
+            }
+
+            function updateHelpModalContent() {
+                const theme = THEMES[currentTheme];
+                const tiles = theme.tiles;
+                let progression = '';
+                for (let i = 0; i < tiles.length - 1; i++) {
+                    progression += `${tiles[i].emoji} + ${tiles[i].emoji} = ${tiles[i + 1].emoji}<br>`;
+                }
+                document.querySelector('#tile-progression p').innerHTML = progression;
+            }
+
+            function switchTheme(newTheme) {
+                if (!THEMES[newTheme]) return;
+                
+                currentTheme = newTheme;
+                TILE_DATA = THEMES[currentTheme].tiles;
+                gameTitle.textContent = THEMES[currentTheme].name;
+                
+                // Save theme preference
+                saveSettings();
+                
+                // Restart music with new theme playlist
+                stopMusic();
+                musicPlayer = null;
+                if (audioUnlocked) {
+                    initMusicPlayer();
+                    if (!isMuted && musicEnabled) {
+                        startMusic();
+                    }
+                }
+                
+                // Start new game with new theme
+                setupGame();
+                
+                logEvent('theme', `Switched to ${newTheme}`);
             }
 
             function getCellPosition(r, c) {
@@ -1364,7 +1496,7 @@
                         bestScore = score;
                         bestScoreDisplay.textContent = bestScore;
                         // Persist immediately so "New Game" / refresh still keeps it.
-                        safeSetItem(STORAGE_KEY, String(bestScore));
+                        safeSetItem(getStorageKey(), String(bestScore));
                     }
                 }
             }
@@ -1898,6 +2030,10 @@
                     updateAudioRouting();
                 }
             });
+            themeSelector.addEventListener('change', (e) => {
+                unlockAudio();
+                switchTheme(e.target.value);
+            });
 
             // --- Start the game ---
             logEvent('boot', `href=${window.location.href}`);
@@ -1905,6 +2041,7 @@
             loadSettings();
             updateSettingsUI();
             updateAudioRouting();
+            gameTitle.textContent = THEMES[currentTheme].name;
             setupGame();
         });
     </script>

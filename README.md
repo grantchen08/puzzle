@@ -1,6 +1,6 @@
 # City Merge Puzzle
 
-A simple and addictive puzzle game where you merge tiles to build a bigger and more advanced city. This game is a variant of the popular 2048 puzzle game, with a city-building theme.
+A simple and addictive puzzle game where you merge tiles to build bigger and more advanced entities. This game is a variant of the popular 2048 puzzle game, featuring multiple themes including city-building and festive Christmas themes.
 
 **[Play the game online here!](https://grantchen08.github.io/puzzle/)**
 
@@ -14,9 +14,30 @@ The goal of the game is to get the highest score possible by merging tiles.
 - A new, basic tile (a tent) will appear in a random empty spot on the board after every move.
 - The game ends when the board is full and there are no more possible moves (no adjacent identical tiles).
 
-## Tile Progression
+## Themes
 
-The buildings evolve as you merge them, starting from a simple tent and growing into a futuristic cityscape. Here is the progression:
+The game features multiple themes, each with unique tile progressions and themed background music. **Christmas theme is the default!**
+
+### 🎄 Christmas Theme (Default)
+
+Festive holiday items that grow from a simple candle to a magical snowflake:
+
+1.  🕯️ (Candle)
+2.  🔔 (Bell)
+3.  🎁 (Gift)
+4.  ⛄ (Snowman)
+5.  🎅 (Santa)
+6.  🤶 (Mrs. Claus)
+7.  🦌 (Reindeer)
+8.  🎄 (Christmas Tree)
+9.  ⭐ (Star)
+10. ❄️ (Snowflake)
+
+**Music:** Classic Christmas carols including Jingle Bells, We Wish You a Merry Christmas, Deck the Halls, Silent Night, and Joy to the World.
+
+### 🏙️ City Theme
+
+The buildings evolve as you merge them, starting from a simple tent and growing into a futuristic cityscape:
 
 1.  ⛺ (Tent)
 2.  🛖 (Hut)
@@ -29,6 +50,8 @@ The buildings evolve as you merge them, starting from a simple tent and growing 
 9.  🗼 (Tokyo Tower)
 10. 🚀 (Rocket)
 
+**Music:** Classic melodies including Twinkle Twinkle Little Star, Frère Jacques, Mary Had a Little Lamb, Ode to Joy, and Row Row Row Your Boat.
+
 ## Features
 
 - **Responsive Design:** The game is playable on both desktop and mobile devices.
@@ -37,9 +60,11 @@ The buildings evolve as you merge them, starting from a simple tent and growing 
 - **New Game:** You can start a new game at any time by clicking the "New Game" button.
 - **Game Over State:** The game clearly indicates when the game is over, celebrates new records, and provides an option to try again.
 - **Touch Controls:** In addition to keyboard controls, you can play the game by swiping on touch-enabled devices.
+- **Multiple Themes:** Switch between different themes (City and Christmas) with unique tile progressions and themed background music.
 - **Sound Effects:** Satisfying sounds for merges and new tiles (with mute option).
-- **Background Music:** Beautiful melodies with realistic instrument synthesis, generated entirely in JavaScript (Web Audio). Plays a **shuffled playlist of public-domain tunes** including classic favorites (e.g. **Twinkle Twinkle Little Star**, **Frère Jacques**, **Mary Had a Little Lamb**, **Ode to Joy**, **Row Row Row Your Boat**) and **festive Christmas carols** (e.g. **Jingle Bells**, **We Wish You a Merry Christmas**, **Deck the Halls**, **Silent Night**, **Joy to the World**). Each tune is performed by different virtual instruments: **🎺 Flute** (breathy with subtle vibrato), **🎹 Piano** (percussive with rich harmonics), **🎷 Saxophone** (reedy with strong vibrato and odd harmonics), and **🔔 Bell** (resonant with inharmonic overtones and long decay). Each instrument uses advanced synthesis techniques including multiple harmonics, custom filter responses, and realistic envelope shaping. Slower tempos for a peaceful, relaxing experience. Starts after your first input (browser autoplay rules) and follows the mute toggle.
+- **Background Music:** Beautiful melodies with realistic instrument synthesis, generated entirely in JavaScript (Web Audio). Each theme has its own **shuffled playlist** of public-domain tunes. The City theme features classic favorites like **Twinkle Twinkle Little Star**, **Frère Jacques**, **Mary Had a Little Lamb**, **Ode to Joy**, and **Row Row Row Your Boat**. The Christmas theme plays **festive carols** including **Jingle Bells**, **We Wish You a Merry Christmas**, **Deck the Halls**, **Silent Night**, and **Joy to the World**. Each tune is performed by different virtual instruments: **🎺 Flute** (breathy with subtle vibrato), **🎹 Piano** (percussive with rich harmonics), **🎷 Saxophone** (reedy with strong vibrato and odd harmonics), and **🔔 Bell** (resonant with inharmonic overtones and long decay). Starts after your first input (browser autoplay rules) and follows the mute toggle.
 - **Settings & Debug Log:** A settings panel (⚙️) lets you toggle **Sound Effects** and **Background Music** separately, and view/copy an in-game **Game Log** (useful for diagnosing audio issues on hosted pages like GitHub Pages).
+- **Theme Persistence:** Your theme choice and best scores are saved separately for each theme.
 
 ### Visual Effects & "Game Juice"
 

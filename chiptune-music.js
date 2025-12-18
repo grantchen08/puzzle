@@ -876,6 +876,38 @@
     ];
   }
 
+  function cityTunes() {
+    // City theme: upbeat, energetic tunes
+    return [
+      { name: 'Twinkle Twinkle Little Star', melody: twinkleTwinkle(), tempo: 100, instrument: 'flute' },
+      { name: 'Frère Jacques', melody: frereJacques(), tempo: 105, instrument: 'piano' },
+      { name: 'Mary Had a Little Lamb', melody: maryHadALittleLamb(), tempo: 110, instrument: 'bell' },
+      { name: 'Ode to Joy', melody: odeToJoy(), tempo: 100, instrument: 'saxophone' },
+      { name: 'Row Row Row Your Boat', melody: rowRowRowYourBoat(), tempo: 95, instrument: 'flute' },
+      { name: 'Twinkle Twinkle Little Star', melody: twinkleTwinkle(), tempo: 105, instrument: 'piano' },
+      { name: 'Frère Jacques', melody: frereJacques(), tempo: 100, instrument: 'saxophone' },
+      { name: 'Mary Had a Little Lamb', melody: maryHadALittleLamb(), tempo: 115, instrument: 'flute' },
+      { name: 'Ode to Joy', melody: odeToJoy(), tempo: 95, instrument: 'piano' },
+      { name: 'Row Row Row Your Boat', melody: rowRowRowYourBoat(), tempo: 100, instrument: 'bell' }
+    ];
+  }
+
+  function christmasTunes() {
+    // Christmas theme: festive holiday music
+    return [
+      { name: 'Jingle Bells', melody: jingleBells(), tempo: 110, instrument: 'bell' },
+      { name: 'We Wish You a Merry Christmas', melody: weWishYouAMerryChristmas(), tempo: 120, instrument: 'flute' },
+      { name: 'Deck the Halls', melody: deckTheHalls(), tempo: 115, instrument: 'piano' },
+      { name: 'Silent Night', melody: silentNight(), tempo: 80, instrument: 'saxophone' },
+      { name: 'Joy to the World', melody: joyToTheWorld(), tempo: 100, instrument: 'bell' },
+      { name: 'Jingle Bells', melody: jingleBells(), tempo: 115, instrument: 'piano' },
+      { name: 'We Wish You a Merry Christmas', melody: weWishYouAMerryChristmas(), tempo: 125, instrument: 'bell' },
+      { name: 'Deck the Halls', melody: deckTheHalls(), tempo: 120, instrument: 'saxophone' },
+      { name: 'Silent Night', melody: silentNight(), tempo: 75, instrument: 'flute' },
+      { name: 'Joy to the World', melody: joyToTheWorld(), tempo: 105, instrument: 'piano' }
+    ];
+  }
+
   return {
     createPlayer: createPlayer,
     midiToFreq: midiToFreq,
@@ -895,7 +927,9 @@
       simple: simpleBass
     },
     tunes: {
-      publicDomain: publicDomainTunes
+      publicDomain: publicDomainTunes,
+      city: cityTunes,
+      christmas: christmasTunes
     }
   };
 });
