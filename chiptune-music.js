@@ -107,6 +107,8 @@
       }
     }
 
+    var currentInstrument = 'flute';
+
     function setTuneByIndex(idx, silent) {
       if (!playlist || !playlist.length) return;
       var t = playlist[idx];
@@ -115,10 +117,11 @@
       if (Array.isArray(t.melody)) melody = t.melody;
       if (Array.isArray(t.bass)) bass = t.bass;
       if (typeof t.tempo === 'number') setTempo(t.tempo);
+      if (typeof t.instrument === 'string') currentInstrument = t.instrument;
       currentTuneName = t.name || ('tune-' + idx);
       melodyPos = 0;
       bassPos = 0;
-      if (!silent) log('Tune -> ' + currentTuneName);
+      if (!silent) log('Tune -> ' + currentTuneName + ' (' + currentInstrument + ')');
     }
 
     function nextTune() {
@@ -213,54 +216,60 @@
       if (!ctx || !musicGain) return;
 
       var freq = note.freq;
-      var type = note.type;
+      var instrument = note.instrument || 'flute';
       var startTime = note.startTime;
       var durationSec = note.durationSec;
       var gain = note.gain;
 
-      // Create a flute-like sound with harmonics
+      // Route to appropriate instrument synthesis
+      if (instrument === 'piano') {
+        playPiano(freq, startTime, durationSec, gain);
+      } else if (instrument === 'saxophone') {
+        playSaxophone(freq, startTime, durationSec, gain);
+      } else if (instrument === 'xylophone') {
+        playXylophone(freq, startTime, durationSec, gain);
+      } else {
+        playFlute(freq, startTime, durationSec, gain);
+      }
+    }
+
+    function playFlute(freq, startTime, durationSec, gain) {
       var masterAmp = ctx.createGain();
       var filter = ctx.createBiquadFilter();
       
-      // Low-pass filter for warm, mellow tone
       filter.type = 'lowpass';
       filter.frequency.setValueAtTime(2000 + freq * 0.5, startTime);
       filter.Q.setValueAtTime(1, startTime);
 
-      // Fundamental frequency (sine wave)
       var osc1 = ctx.createOscillator();
       var amp1 = ctx.createGain();
       osc1.type = 'sine';
       osc1.frequency.setValueAtTime(freq, startTime);
-      amp1.gain.setValueAtTime(0.6, startTime); // Main tone
+      amp1.gain.setValueAtTime(0.6, startTime);
       
-      // Second harmonic (octave) - very subtle
       var osc2 = ctx.createOscillator();
       var amp2 = ctx.createGain();
       osc2.type = 'sine';
       osc2.frequency.setValueAtTime(freq * 2, startTime);
       amp2.gain.setValueAtTime(0.1, startTime);
       
-      // Third harmonic - gives flute character
       var osc3 = ctx.createOscillator();
       var amp3 = ctx.createGain();
       osc3.type = 'sine';
       osc3.frequency.setValueAtTime(freq * 3, startTime);
       amp3.gain.setValueAtTime(0.15, startTime);
 
-      // Add subtle vibrato for expressiveness
       var vibrato = ctx.createOscillator();
       var vibratoGain = ctx.createGain();
-      vibrato.frequency.setValueAtTime(5, startTime); // 5 Hz vibrato
-      vibratoGain.gain.setValueAtTime(3, startTime); // Subtle pitch modulation
+      vibrato.frequency.setValueAtTime(5, startTime);
+      vibratoGain.gain.setValueAtTime(3, startTime);
       vibrato.connect(vibratoGain);
       vibratoGain.connect(osc1.frequency);
       vibratoGain.connect(osc2.frequency);
       vibratoGain.connect(osc3.frequency);
 
-      // Breath-like attack with gentle onset
-      var attack = 0.08; // Slower attack mimics breath
-      var release = Math.min(0.2, durationSec * 0.6); // Gentle release
+      var attack = 0.08;
+      var release = Math.min(0.2, durationSec * 0.6);
       var sustainTime = Math.max(0, durationSec - attack - release);
 
       masterAmp.gain.setValueAtTime(0.0001, startTime);
@@ -270,7 +279,6 @@
       }
       masterAmp.gain.exponentialRampToValueAtTime(0.0001, startTime + durationSec);
 
-      // Connect oscillators through filter
       osc1.connect(amp1);
       osc2.connect(amp2);
       osc3.connect(amp3);
@@ -280,17 +288,212 @@
       filter.connect(masterAmp);
       masterAmp.connect(musicGain);
 
-      // Start all oscillators
       osc1.start(startTime);
       osc2.start(startTime);
       osc3.start(startTime);
       vibrato.start(startTime);
       
-      // Stop all oscillators
       osc1.stop(startTime + durationSec + 0.02);
       osc2.stop(startTime + durationSec + 0.02);
       osc3.stop(startTime + durationSec + 0.02);
       vibrato.stop(startTime + durationSec + 0.02);
+    }
+
+    function playPiano(freq, startTime, durationSec, gain) {
+      var masterAmp = ctx.createGain();
+      
+      // Piano has rich harmonics
+      var osc1 = ctx.createOscillator();
+      var amp1 = ctx.createGain();
+      osc1.type = 'sine';
+      osc1.frequency.setValueAtTime(freq, startTime);
+      amp1.gain.setValueAtTime(0.5, startTime);
+      
+      var osc2 = ctx.createOscillator();
+      var amp2 = ctx.createGain();
+      osc2.type = 'sine';
+      osc2.frequency.setValueAtTime(freq * 2, startTime);
+      amp2.gain.setValueAtTime(0.2, startTime);
+      
+      var osc3 = ctx.createOscillator();
+      var amp3 = ctx.createGain();
+      osc3.type = 'sine';
+      osc3.frequency.setValueAtTime(freq * 3, startTime);
+      amp3.gain.setValueAtTime(0.1, startTime);
+      
+      var osc4 = ctx.createOscillator();
+      var amp4 = ctx.createGain();
+      osc4.type = 'sine';
+      osc4.frequency.setValueAtTime(freq * 4.2, startTime);
+      amp4.gain.setValueAtTime(0.08, startTime);
+
+      // Piano has fast attack and exponential decay
+      var attack = 0.002;
+      var decay = Math.min(0.4, durationSec * 0.8);
+      var sustainLevel = gain * 0.3;
+      var sustainTime = Math.max(0, durationSec - attack - decay);
+
+      masterAmp.gain.setValueAtTime(0.0001, startTime);
+      masterAmp.gain.exponentialRampToValueAtTime(Math.max(0.0002, gain), startTime + attack);
+      masterAmp.gain.exponentialRampToValueAtTime(Math.max(0.0002, sustainLevel), startTime + attack + decay);
+      if (sustainTime > 0) {
+        masterAmp.gain.setValueAtTime(Math.max(0.0002, sustainLevel), startTime + attack + decay + sustainTime);
+      }
+      masterAmp.gain.exponentialRampToValueAtTime(0.0001, startTime + durationSec);
+
+      osc1.connect(amp1);
+      osc2.connect(amp2);
+      osc3.connect(amp3);
+      osc4.connect(amp4);
+      amp1.connect(masterAmp);
+      amp2.connect(masterAmp);
+      amp3.connect(masterAmp);
+      amp4.connect(masterAmp);
+      masterAmp.connect(musicGain);
+
+      osc1.start(startTime);
+      osc2.start(startTime);
+      osc3.start(startTime);
+      osc4.start(startTime);
+      
+      osc1.stop(startTime + durationSec + 0.02);
+      osc2.stop(startTime + durationSec + 0.02);
+      osc3.stop(startTime + durationSec + 0.02);
+      osc4.stop(startTime + durationSec + 0.02);
+    }
+
+    function playSaxophone(freq, startTime, durationSec, gain) {
+      var masterAmp = ctx.createGain();
+      var filter = ctx.createBiquadFilter();
+      
+      // Saxophone has a brighter, more resonant sound
+      filter.type = 'bandpass';
+      filter.frequency.setValueAtTime(800 + freq, startTime);
+      filter.Q.setValueAtTime(2, startTime);
+
+      // Sax has strong odd harmonics (reed instrument)
+      var osc1 = ctx.createOscillator();
+      var amp1 = ctx.createGain();
+      osc1.type = 'sine';
+      osc1.frequency.setValueAtTime(freq, startTime);
+      amp1.gain.setValueAtTime(0.4, startTime);
+      
+      var osc2 = ctx.createOscillator();
+      var amp2 = ctx.createGain();
+      osc2.type = 'sine';
+      osc2.frequency.setValueAtTime(freq * 3, startTime);
+      amp2.gain.setValueAtTime(0.3, startTime);
+      
+      var osc3 = ctx.createOscillator();
+      var amp3 = ctx.createGain();
+      osc3.type = 'sine';
+      osc3.frequency.setValueAtTime(freq * 5, startTime);
+      amp3.gain.setValueAtTime(0.2, startTime);
+      
+      var osc4 = ctx.createOscillator();
+      var amp4 = ctx.createGain();
+      osc4.type = 'sine';
+      osc4.frequency.setValueAtTime(freq * 7, startTime);
+      amp4.gain.setValueAtTime(0.1, startTime);
+
+      // Sax has strong vibrato
+      var vibrato = ctx.createOscillator();
+      var vibratoGain = ctx.createGain();
+      vibrato.frequency.setValueAtTime(6, startTime);
+      vibratoGain.gain.setValueAtTime(8, startTime);
+      vibrato.connect(vibratoGain);
+      vibratoGain.connect(osc1.frequency);
+      vibratoGain.connect(osc2.frequency);
+      vibratoGain.connect(osc3.frequency);
+      vibratoGain.connect(osc4.frequency);
+
+      var attack = 0.05;
+      var release = Math.min(0.15, durationSec * 0.5);
+      var sustainTime = Math.max(0, durationSec - attack - release);
+
+      masterAmp.gain.setValueAtTime(0.0001, startTime);
+      masterAmp.gain.exponentialRampToValueAtTime(Math.max(0.0002, gain), startTime + attack);
+      if (sustainTime > 0) {
+        masterAmp.gain.setValueAtTime(Math.max(0.0002, gain), startTime + attack + sustainTime);
+      }
+      masterAmp.gain.exponentialRampToValueAtTime(0.0001, startTime + durationSec);
+
+      osc1.connect(amp1);
+      osc2.connect(amp2);
+      osc3.connect(amp3);
+      osc4.connect(amp4);
+      amp1.connect(filter);
+      amp2.connect(filter);
+      amp3.connect(filter);
+      amp4.connect(filter);
+      filter.connect(masterAmp);
+      masterAmp.connect(musicGain);
+
+      osc1.start(startTime);
+      osc2.start(startTime);
+      osc3.start(startTime);
+      osc4.start(startTime);
+      vibrato.start(startTime);
+      
+      osc1.stop(startTime + durationSec + 0.02);
+      osc2.stop(startTime + durationSec + 0.02);
+      osc3.stop(startTime + durationSec + 0.02);
+      osc4.stop(startTime + durationSec + 0.02);
+      vibrato.stop(startTime + durationSec + 0.02);
+    }
+
+    function playXylophone(freq, startTime, durationSec, gain) {
+      var masterAmp = ctx.createGain();
+      var filter = ctx.createBiquadFilter();
+      
+      // Xylophone has bright, metallic sound
+      filter.type = 'highpass';
+      filter.frequency.setValueAtTime(800, startTime);
+      filter.Q.setValueAtTime(1, startTime);
+
+      // Xylophone has inharmonic overtones
+      var osc1 = ctx.createOscillator();
+      var amp1 = ctx.createGain();
+      osc1.type = 'sine';
+      osc1.frequency.setValueAtTime(freq, startTime);
+      amp1.gain.setValueAtTime(0.6, startTime);
+      
+      var osc2 = ctx.createOscillator();
+      var amp2 = ctx.createGain();
+      osc2.type = 'sine';
+      osc2.frequency.setValueAtTime(freq * 2.76, startTime); // Slightly inharmonic
+      amp2.gain.setValueAtTime(0.3, startTime);
+      
+      var osc3 = ctx.createOscillator();
+      var amp3 = ctx.createGain();
+      osc3.type = 'sine';
+      osc3.frequency.setValueAtTime(freq * 5.4, startTime); // Inharmonic
+      amp3.gain.setValueAtTime(0.2, startTime);
+
+      // Very fast attack and decay (percussive)
+      var attack = 0.001;
+      var decay = Math.min(0.15, durationSec * 0.9);
+
+      masterAmp.gain.setValueAtTime(0.0001, startTime);
+      masterAmp.gain.exponentialRampToValueAtTime(Math.max(0.0002, gain * 1.5), startTime + attack);
+      masterAmp.gain.exponentialRampToValueAtTime(0.0001, startTime + attack + decay);
+
+      osc1.connect(amp1);
+      osc2.connect(amp2);
+      osc3.connect(amp3);
+      amp1.connect(filter);
+      amp2.connect(filter);
+      amp3.connect(filter);
+      filter.connect(masterAmp);
+      masterAmp.connect(musicGain);
+
+      osc1.start(startTime);
+      osc2.start(startTime);
+      osc3.start(startTime);
+      
+      osc1.stop(startTime + durationSec + 0.02);
+      osc2.stop(startTime + durationSec + 0.02);
+      osc3.stop(startTime + durationSec + 0.02);
     }
 
     function schedule() {
@@ -310,10 +513,10 @@
           if (m && m.midi != null) {
             playOscNote({
               freq: midiToFreq(m.midi),
-              type: 'sine', // Sine wave for smooth, mellow tone
+              instrument: currentInstrument,
               startTime: start,
               durationSec: durSec * 0.98,
-              gain: 0.06 // Slightly reduced for gentler sound
+              gain: 0.06
             });
           }
 
@@ -322,10 +525,10 @@
             var bDurSec = bDurBeats * secondsPerBeat;
             playOscNote({
               freq: midiToFreq(b.midi),
-              type: 'sine', // Sine wave for smooth bass
+              instrument: currentInstrument,
               startTime: start,
               durationSec: bDurSec * 0.95,
-              gain: 0.04 // Slightly reduced for subtler accompaniment
+              gain: 0.04
             });
           }
 
@@ -536,13 +739,18 @@
   }
 
   function publicDomainTunes() {
-    // Provide a ready-to-use shuffled playlist source.
+    // Provide a ready-to-use shuffled playlist source with different instruments.
     return [
-      { name: 'Twinkle Twinkle Little Star', melody: twinkleTwinkle(), tempo: 100 }, // Slower, more peaceful
-      { name: 'Frère Jacques', melody: frereJacques(), tempo: 105 },
-      { name: 'Mary Had a Little Lamb', melody: maryHadALittleLamb(), tempo: 110 },
-      { name: 'Ode to Joy', melody: odeToJoy(), tempo: 100 },
-      { name: 'Row Row Row Your Boat', melody: rowRowRowYourBoat(), tempo: 95 }
+      { name: 'Twinkle Twinkle Little Star', melody: twinkleTwinkle(), tempo: 100, instrument: 'flute' },
+      { name: 'Frère Jacques', melody: frereJacques(), tempo: 105, instrument: 'piano' },
+      { name: 'Mary Had a Little Lamb', melody: maryHadALittleLamb(), tempo: 110, instrument: 'xylophone' },
+      { name: 'Ode to Joy', melody: odeToJoy(), tempo: 100, instrument: 'saxophone' },
+      { name: 'Row Row Row Your Boat', melody: rowRowRowYourBoat(), tempo: 95, instrument: 'flute' },
+      { name: 'Twinkle Twinkle Little Star', melody: twinkleTwinkle(), tempo: 105, instrument: 'piano' },
+      { name: 'Frère Jacques', melody: frereJacques(), tempo: 100, instrument: 'saxophone' },
+      { name: 'Mary Had a Little Lamb', melody: maryHadALittleLamb(), tempo: 115, instrument: 'flute' },
+      { name: 'Ode to Joy', melody: odeToJoy(), tempo: 95, instrument: 'piano' },
+      { name: 'Row Row Row Your Boat', melody: rowRowRowYourBoat(), tempo: 100, instrument: 'xylophone' }
     ];
   }
 
