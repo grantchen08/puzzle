@@ -57,7 +57,8 @@ function createPlayer(options = {}) {
 
   let isPlaying = false;
   let timerId = null;
-  let step = 0;
+  let melodyPos = 0;
+  let bassPos = 0;
   let nextNoteTime = 0;
 
   function shuffleArray(arr) {
@@ -91,7 +92,8 @@ function createPlayer(options = {}) {
     if (Array.isArray(t.bass)) bass = t.bass;
     if (typeof t.tempo === 'number') setTempo(t.tempo);
     currentTuneName = t.name || `tune-${idx}`;
-    step = 0;
+    melodyPos = 0;
+    bassPos = 0;
     if (!silent) log(`Tune -> ${currentTuneName}`);
   }
 
@@ -217,12 +219,8 @@ function createPlayer(options = {}) {
       const secondsPerBeat = 60 / tempo;
 
       while (nextNoteTime < ctx.currentTime + scheduleAheadSec) {
-        if (playlist && melody.length && step > 0 && (step % melody.length === 0)) {
-          nextTune();
-        }
-
-        const m = melody.length ? melody[step % melody.length] : null;
-        const b = bass.length ? bass[step % bass.length] : null;
+        const m = melody.length ? melody[melodyPos] : null;
+        const b = bass.length ? bass[bassPos] : null;
 
         const start = nextNoteTime;
         const durBeats = m && typeof m.dur === 'number' ? m.dur : 1;
@@ -251,7 +249,18 @@ function createPlayer(options = {}) {
         }
 
         nextNoteTime += durSec;
-        step++;
+
+        if (melody.length) {
+          melodyPos++;
+          if (melodyPos >= melody.length) {
+            melodyPos = 0;
+            if (playlist) nextTune();
+          }
+        }
+        if (bass.length) {
+          bassPos++;
+          if (bassPos >= bass.length) bassPos = 0;
+        }
       }
     } catch (e) {
       log(`schedule error: ${e && e.message ? e.message : e}`);
@@ -294,7 +303,8 @@ function createPlayer(options = {}) {
     initPlaylistIfNeeded();
 
     isPlaying = true;
-    step = 0;
+    melodyPos = 0;
+    bassPos = 0;
     nextNoteTime = ctx.currentTime + 0.05;
     timerId = setInterval(schedule, lookaheadMs);
     log(`Music started (ctxState=${ctx.state}, tempo=${tempo}${currentTuneName ? `, tune=${currentTuneName}` : ''})`);
@@ -334,6 +344,8 @@ function createPlayer(options = {}) {
       playlistSize: playlist ? playlist.length : 0,
       playlistIndex: playlist ? playlistPos : 0,
       playlistShuffled: !!shufflePlaylist,
+      melodyPos,
+      bassPos,
     };
   }
 

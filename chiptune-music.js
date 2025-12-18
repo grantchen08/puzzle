@@ -79,7 +79,8 @@
 
     var isPlaying = false;
     var timerId = null;
-    var step = 0;
+    var melodyPos = 0;
+    var bassPos = 0;
     var nextNoteTime = 0;
 
     function shuffleArray(arr) {
@@ -115,7 +116,8 @@
       if (Array.isArray(t.bass)) bass = t.bass;
       if (typeof t.tempo === 'number') setTempo(t.tempo);
       currentTuneName = t.name || ('tune-' + idx);
-      step = 0;
+      melodyPos = 0;
+      bassPos = 0;
       if (!silent) log('Tune -> ' + currentTuneName);
     }
 
@@ -248,13 +250,8 @@
         var secondsPerBeat = 60 / tempo;
 
         while (nextNoteTime < ctx.currentTime + scheduleAheadSec) {
-          // If using a playlist, advance tune on wrap-around.
-          if (playlist && melody.length && step > 0 && (step % melody.length === 0)) {
-            nextTune();
-          }
-
-          var m = melody.length ? melody[step % melody.length] : null;
-          var b = bass.length ? bass[step % bass.length] : null;
+          var m = melody.length ? melody[melodyPos] : null;
+          var b = bass.length ? bass[bassPos] : null;
 
           var start = nextNoteTime;
           var durBeats = (m && typeof m.dur === 'number') ? m.dur : 1;
@@ -283,7 +280,19 @@
           }
 
           nextNoteTime += durSec;
-          step++;
+
+          // Advance melody/bass positions and rotate tune at melody end.
+          if (melody.length) {
+            melodyPos++;
+            if (melodyPos >= melody.length) {
+              melodyPos = 0;
+              if (playlist) nextTune();
+            }
+          }
+          if (bass.length) {
+            bassPos++;
+            if (bassPos >= bass.length) bassPos = 0;
+          }
         }
       } catch (e) {
         log('schedule error: ' + (e && e.message ? e.message : e));
@@ -326,7 +335,8 @@
       initPlaylistIfNeeded();
 
       isPlaying = true;
-      step = 0;
+      melodyPos = 0;
+      bassPos = 0;
       nextNoteTime = ctx.currentTime + 0.05;
       timerId = setInterval(schedule, lookaheadMs);
       log('Music started (ctxState=' + ctx.state + ', tempo=' + tempo + (currentTuneName ? ', tune=' + currentTuneName : '') + ')');
@@ -365,7 +375,9 @@
         tune: currentTuneName,
         playlistSize: playlist ? playlist.length : 0,
         playlistIndex: playlist ? playlistPos : 0,
-        playlistShuffled: !!shufflePlaylist
+        playlistShuffled: !!shufflePlaylist,
+        melodyPos: melodyPos,
+        bassPos: bassPos
       };
     }
 
