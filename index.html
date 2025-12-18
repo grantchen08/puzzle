@@ -45,33 +45,10 @@
             width: 100%;
         }
 
-        .header-left {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
         h1 {
             font-size: 2.5rem;
             margin: 0;
             font-weight: 700;
-        }
-
-        #theme-selector {
-            background-color: #8b7969;
-            color: white;
-            border: none;
-            padding: 8px 12px;
-            border-radius: 6px;
-            font-size: 0.9rem;
-            font-weight: 700;
-            cursor: pointer;
-            transition: background-color 0.2s ease;
-            font-family: var(--font-family);
-        }
-
-        #theme-selector:hover {
-            background-color: #9c8a7a;
         }
 
         .controls {
@@ -351,6 +328,23 @@
             line-height: 1.3;
         }
 
+        .setting-row select {
+            background-color: #8b7969;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            font-family: var(--font-family);
+        }
+
+        .setting-row select:hover {
+            background-color: #9c8a7a;
+        }
+
         .settings-actions {
             display: flex;
             justify-content: center;
@@ -454,11 +448,6 @@
                 gap: 15px;
             }
 
-            .header-left {
-                flex-direction: column;
-                gap: 10px;
-            }
-
             .controls {
                 flex-wrap: wrap;
                 justify-content: center;
@@ -466,8 +455,7 @@
         }
 
         @media (max-width: 480px) {
-            h1 { font-size: 1.8rem; }
-            #theme-selector { font-size: 0.8rem; padding: 6px 10px; }
+            h1 { font-size: 2rem; }
             .score-container { padding: 5px 15px; }
             #score { font-size: 1.2rem; }
             #new-game-btn, #try-again-btn, #help-btn, #help-close-btn, #mute-btn, #settings-btn,
@@ -487,13 +475,7 @@
 
     <div class="game-container">
         <div class="header">
-            <div class="header-left">
-                <h1 id="game-title">City Merge</h1>
-                <select id="theme-selector">
-                    <option value="christmas">🎄 Christmas</option>
-                    <option value="city">🏙️ City</option>
-                </select>
-            </div>
+            <h1 id="game-title">City Merge</h1>
             <div class="controls">
                 <div class="score-container">
                     <div class="score-title">SCORE</div>
@@ -506,7 +488,7 @@
                 <button id="mute-btn">🔊</button>
                 <button id="settings-btn">⚙️</button>
                 <button id="help-btn">❓</button>
-                <button id="new-game-btn">New Game</button>
+                <button id="new-game-btn">🔄</button>
             </div>
         </div>
         <div class="board-container">
@@ -546,6 +528,16 @@
 
             <div id="settings-modal">
                 <h2>Settings</h2>
+                <div class="setting-row">
+                    <div>
+                        <label for="theme-selector">Theme</label>
+                        <small>Switch between game themes</small>
+                    </div>
+                    <select id="theme-selector">
+                        <option value="christmas">🎄 Christmas</option>
+                        <option value="city">🏙️ City</option>
+                    </select>
+                </div>
                 <div class="setting-row">
                     <div>
                         <label for="sfx-toggle">Sound Effects</label>
@@ -2033,6 +2025,7 @@
             themeSelector.addEventListener('change', (e) => {
                 unlockAudio();
                 switchTheme(e.target.value);
+                hideSettings();
             });
 
             // --- Start the game ---
