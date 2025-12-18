@@ -534,6 +534,7 @@
     <audio id="merge-sound" src="sounds/yay-6326.mp3" preload="auto"></audio>
     <audio id="pop-sound" src="sounds/pop-423717.mp3" preload="auto"></audio>
 
+    <script src="chiptune-music.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const canvas = document.getElementById('game-canvas');
@@ -603,157 +604,34 @@
                 10: { message: '🚀 INCREDIBLE! 🚀', color: '#00ff88', confetti: true, big: true }
             };
 
-            // --- Web Audio "chiptune" background music (original melody) ---
-            // Note: Browsers require a user gesture to start audio; we start music via unlockAudio().
-            let audioCtx = null;
-            let masterGain = null; // Master volume for all WebAudio (ties into mute button)
-            let musicGain = null;  // Music-only volume (leave SFX as <audio> elements)
+            // --- Background music (reusable module in chiptune-music.js) ---
+            let musicPlayer = null;
 
-            const musicState = {
-                isPlaying: false,
-                timerId: null,
-                nextNoteTime: 0,
-                step: 0,
-                tempo: 120, // BPM (fits simple melodies well)
-                lookaheadMs: 25,
-                scheduleAheadSec: 0.12
-            };
-
-            // "Twinkle Twinkle Little Star" (public domain) in a chiptune style.
-            // MIDI note numbers; null = rest. dur = beats (quarter-note = 1).
-            const MUSIC_MELODY = [
-                // Phrase 1: C C G G A A G(hold)
-                { midi: 72, dur: 1 }, { midi: 72, dur: 1 }, { midi: 79, dur: 1 }, { midi: 79, dur: 1 },
-                { midi: 81, dur: 1 }, { midi: 81, dur: 1 }, { midi: 79, dur: 2 },
-                // Phrase 2: F F E E D D C(hold)
-                { midi: 77, dur: 1 }, { midi: 77, dur: 1 }, { midi: 76, dur: 1 }, { midi: 76, dur: 1 },
-                { midi: 74, dur: 1 }, { midi: 74, dur: 1 }, { midi: 72, dur: 2 },
-                // Phrase 3: G G F F E E D(hold)
-                { midi: 79, dur: 1 }, { midi: 79, dur: 1 }, { midi: 77, dur: 1 }, { midi: 77, dur: 1 },
-                { midi: 76, dur: 1 }, { midi: 76, dur: 1 }, { midi: 74, dur: 2 },
-                // Phrase 4: G G F F E E D(hold)
-                { midi: 79, dur: 1 }, { midi: 79, dur: 1 }, { midi: 77, dur: 1 }, { midi: 77, dur: 1 },
-                { midi: 76, dur: 1 }, { midi: 76, dur: 1 }, { midi: 74, dur: 2 },
-                // Phrase 5: C C G G A A G(hold)
-                { midi: 72, dur: 1 }, { midi: 72, dur: 1 }, { midi: 79, dur: 1 }, { midi: 79, dur: 1 },
-                { midi: 81, dur: 1 }, { midi: 81, dur: 1 }, { midi: 79, dur: 2 },
-                // Phrase 6: F F E E D D C(hold)
-                { midi: 77, dur: 1 }, { midi: 77, dur: 1 }, { midi: 76, dur: 1 }, { midi: 76, dur: 1 },
-                { midi: 74, dur: 1 }, { midi: 74, dur: 1 }, { midi: 72, dur: 2 }
-            ];
-
-            // Light bass pulse underneath the melody (triangle wave).
-            const MUSIC_BASS = [
-                { midi: 52, dur: 1.0 }, { midi: 52, dur: 1.0 }, { midi: 55, dur: 1.0 }, { midi: 55, dur: 1.0 },
-                { midi: 57, dur: 1.0 }, { midi: 57, dur: 1.0 }, { midi: 55, dur: 1.0 }, { midi: 55, dur: 1.0 }
-            ];
-
-            function midiToFreq(midi) {
-                return 440 * Math.pow(2, (midi - 69) / 12);
-            }
-
-            function ensureAudioContext() {
-                if (audioCtx) return;
-                const Ctx = window.AudioContext || window.webkitAudioContext;
-                if (!Ctx) {
-                    logEvent('music', 'Web Audio API not supported (no AudioContext)');
-                    return; // Very old browser
+            function initMusicPlayer() {
+                if (musicPlayer) return;
+                if (!window.ChiptuneMusic || typeof window.ChiptuneMusic.createPlayer !== 'function') {
+                    logEvent('music', 'ChiptuneMusic module not loaded (missing chiptune-music.js)');
+                    return;
                 }
 
-                audioCtx = new Ctx();
-                masterGain = audioCtx.createGain();
-                musicGain = audioCtx.createGain();
-
-                // Keep music a bit subtle under SFX.
-                musicGain.gain.value = 0.22;
-                masterGain.gain.value = isMuted ? 0 : 1;
-
-                musicGain.connect(masterGain);
-                masterGain.connect(audioCtx.destination);
-
-                audioCtx.onstatechange = () => {
-                    logEvent('music', `AudioContext state -> ${audioCtx.state}`);
-                };
-
-                logEvent('music', `AudioContext created (state=${audioCtx.state})`);
+                musicPlayer = window.ChiptuneMusic.createPlayer({
+                    melody: window.ChiptuneMusic.melodies.twinkleTwinkle(),
+                    bass: window.ChiptuneMusic.bassPatterns.simple(),
+                    tempo: 120,
+                    volume: 0.22,
+                    log: (msg) => logEvent('music', msg)
+                });
             }
 
             function setWebAudioMuted(muted) {
-                if (!masterGain) return;
-                masterGain.gain.setValueAtTime(muted ? 0 : 1, audioCtx.currentTime);
-            }
-
-            function playOscNote({ freq, type, startTime, durationSec, gain }) {
-                if (!audioCtx || !musicGain) return;
-                const osc = audioCtx.createOscillator();
-                const amp = audioCtx.createGain();
-
-                osc.type = type;
-                osc.frequency.setValueAtTime(freq, startTime);
-
-                // Quick attack + short release for classic bleep feel.
-                const attack = 0.005;
-                const release = Math.min(0.06, durationSec * 0.35);
-                const sustainTime = Math.max(0, durationSec - attack - release);
-
-                amp.gain.setValueAtTime(0.0001, startTime);
-                amp.gain.exponentialRampToValueAtTime(Math.max(0.0002, gain), startTime + attack);
-                if (sustainTime > 0) {
-                    amp.gain.setValueAtTime(Math.max(0.0002, gain), startTime + attack + sustainTime);
-                }
-                amp.gain.exponentialRampToValueAtTime(0.0001, startTime + durationSec);
-
-                osc.connect(amp);
-                amp.connect(musicGain);
-
-                osc.start(startTime);
-                osc.stop(startTime + durationSec + 0.02);
-            }
-
-            function scheduleMusic() {
-                if (!audioCtx || !musicState.isPlaying) return;
-                try {
-                    const secondsPerBeat = 60 / musicState.tempo;
-
-                    while (musicState.nextNoteTime < audioCtx.currentTime + musicState.scheduleAheadSec) {
-                        const m = MUSIC_MELODY[musicState.step % MUSIC_MELODY.length];
-                        const b = MUSIC_BASS[musicState.step % MUSIC_BASS.length];
-
-                        const start = musicState.nextNoteTime;
-                        const durSec = (m.dur || 1) * secondsPerBeat;
-
-                        if (m.midi != null) {
-                            playOscNote({
-                                freq: midiToFreq(m.midi),
-                                type: 'square',
-                                startTime: start,
-                                durationSec: durSec * 0.98,
-                                gain: 0.08
-                            });
-                        }
-
-                        if (b.midi != null) {
-                            playOscNote({
-                                freq: midiToFreq(b.midi),
-                                type: 'triangle',
-                                startTime: start,
-                                durationSec: secondsPerBeat * 0.95,
-                                gain: 0.05
-                            });
-                        }
-
-                        musicState.nextNoteTime += durSec;
-                        musicState.step++;
-                    }
-                } catch (e) {
-                    logEvent('music', `scheduleMusic error: ${e && e.message ? e.message : e}`);
-                    stopMusic();
-                }
+                initMusicPlayer();
+                if (!musicPlayer) return;
+                musicPlayer.setMuted(muted);
             }
 
             function startMusic() {
-                ensureAudioContext();
-                if (!audioCtx || musicState.isPlaying) return;
+                initMusicPlayer();
+                if (!musicPlayer) return;
                 if (isMuted) {
                     logEvent('music', 'startMusic skipped: master muted');
                     return;
@@ -763,30 +641,20 @@
                     return;
                 }
 
-                // Resume context if needed (autoplay policies).
-                if (audioCtx.state === 'suspended') {
-                    audioCtx.resume().then(() => {
-                        logEvent('music', 'AudioContext resume() ok');
-                    }).catch((e) => {
-                        logEvent('music', `AudioContext resume() failed: ${e && e.message ? e.message : e}`);
-                    });
-                }
-
-                musicState.isPlaying = true;
-                musicState.step = 0;
-                musicState.nextNoteTime = audioCtx.currentTime + 0.05;
-                musicState.timerId = setInterval(scheduleMusic, musicState.lookaheadMs);
-                logEvent('music', `Music started (ctxState=${audioCtx.state}, tempo=${musicState.tempo})`);
+                musicPlayer.setEnabled(true);
+                musicPlayer.setMuted(false);
+                musicPlayer.start();
             }
 
             function stopMusic() {
-                if (!musicState.isPlaying) return;
-                musicState.isPlaying = false;
-                if (musicState.timerId) {
-                    clearInterval(musicState.timerId);
-                    musicState.timerId = null;
-                }
-                logEvent('music', 'Music stopped');
+                if (!musicPlayer) return;
+                musicPlayer.stop();
+            }
+
+            function unlockMusic() {
+                initMusicPlayer();
+                if (!musicPlayer) return Promise.resolve(false);
+                return musicPlayer.unlock();
             }
 
             // --- In-game log (for debugging, especially audio on GitHub Pages) ---
@@ -920,14 +788,8 @@
 
             function unlockAudio() {
                 logEvent('audio', `unlockAudio (muted=${isMuted}, sfx=${sfxEnabled}, music=${musicEnabled})`);
-                ensureAudioContext();
-                if (audioCtx && audioCtx.state === 'suspended') {
-                    audioCtx.resume().then(() => {
-                        logEvent('music', 'AudioContext resume() ok (unlockAudio)');
-                    }).catch((e) => {
-                        logEvent('music', `AudioContext resume() failed (unlockAudio): ${e && e.message ? e.message : e}`);
-                    });
-                }
+                // Music uses Web Audio and must be unlocked by user gesture.
+                unlockMusic();
 
                 // If we've already unlocked, still ensure music is running when unmuted.
                 if (audioUnlocked) {
