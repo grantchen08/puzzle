@@ -615,9 +615,10 @@
                 }
 
                 musicPlayer = window.ChiptuneMusic.createPlayer({
-                    melody: window.ChiptuneMusic.melodies.twinkleTwinkle(),
+                    playlist: window.ChiptuneMusic.tunes && window.ChiptuneMusic.tunes.publicDomain ? window.ChiptuneMusic.tunes.publicDomain() : [],
+                    shufflePlaylist: true,
                     bass: window.ChiptuneMusic.bassPatterns.simple(),
-                    tempo: 120,
+                    tempo: 120, // fallback
                     volume: 0.22,
                     log: (msg) => logEvent('music', msg)
                 });

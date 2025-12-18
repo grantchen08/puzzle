@@ -36,6 +36,11 @@ function createPlayer(options = {}) {
 
   let melody = Array.isArray(options.melody) ? options.melody : [];
   let bass = Array.isArray(options.bass) ? options.bass : [];
+  let playlist = Array.isArray(options.playlist) ? options.playlist : null; // [{ name, melody, bass?, tempo? }, ...]
+  let shufflePlaylist = !!options.shufflePlaylist;
+  let playlistOrder = null;
+  let playlistPos = 0;
+  let currentTuneName = null;
 
   let tempo = typeof options.tempo === 'number' ? options.tempo : 120;
   const lookaheadMs = typeof options.lookaheadMs === 'number' ? options.lookaheadMs : 25;
@@ -54,6 +59,54 @@ function createPlayer(options = {}) {
   let timerId = null;
   let step = 0;
   let nextNoteTime = 0;
+
+  function shuffleArray(arr) {
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      const tmp = arr[i];
+      arr[i] = arr[j];
+      arr[j] = tmp;
+    }
+    return arr;
+  }
+
+  function initPlaylistIfNeeded() {
+    if (!playlist || !playlist.length) return;
+    if (!playlistOrder) {
+      playlistOrder = Array.from({ length: playlist.length }, (_, i) => i);
+      if (shufflePlaylist) shuffleArray(playlistOrder);
+      playlistPos = 0;
+    }
+    if (!melody.length) {
+      setTuneByIndex(playlistOrder[playlistPos], true);
+    }
+  }
+
+  function setTuneByIndex(idx, silent) {
+    if (!playlist || !playlist.length) return;
+    const t = playlist[idx];
+    if (!t) return;
+
+    if (Array.isArray(t.melody)) melody = t.melody;
+    if (Array.isArray(t.bass)) bass = t.bass;
+    if (typeof t.tempo === 'number') setTempo(t.tempo);
+    currentTuneName = t.name || `tune-${idx}`;
+    step = 0;
+    if (!silent) log(`Tune -> ${currentTuneName}`);
+  }
+
+  function nextTune() {
+    if (!playlist || !playlist.length) return;
+    initPlaylistIfNeeded();
+    if (!playlistOrder) return;
+
+    playlistPos++;
+    if (playlistPos >= playlistOrder.length) {
+      playlistPos = 0;
+      if (shufflePlaylist) shuffleArray(playlistOrder);
+    }
+    setTuneByIndex(playlistOrder[playlistPos], false);
+  }
 
   function ensure() {
     if (ctx) return true;
@@ -115,6 +168,21 @@ function createPlayer(options = {}) {
     if (typeof seq.tempo === 'number') setTempo(seq.tempo);
   }
 
+  function setPlaylist(pl, shuffle) {
+    playlist = Array.isArray(pl) ? pl : null;
+    shufflePlaylist = !!shuffle;
+    playlistOrder = null;
+    playlistPos = 0;
+    currentTuneName = null;
+
+    if (playlist && playlist.length) {
+      initPlaylistIfNeeded();
+      log(`Playlist set (${playlist.length} tunes${shufflePlaylist ? ', shuffled' : ''})`);
+    } else {
+      log('Playlist cleared');
+    }
+  }
+
   function playOscNote({ freq, type, startTime, durationSec, gain }) {
     if (!ctx || !musicGain) return;
 
@@ -149,6 +217,10 @@ function createPlayer(options = {}) {
       const secondsPerBeat = 60 / tempo;
 
       while (nextNoteTime < ctx.currentTime + scheduleAheadSec) {
+        if (playlist && melody.length && step > 0 && (step % melody.length === 0)) {
+          nextTune();
+        }
+
         const m = melody.length ? melody[step % melody.length] : null;
         const b = bass.length ? bass[step % bass.length] : null;
 
@@ -219,11 +291,13 @@ function createPlayer(options = {}) {
     // Try to resume, but don't block scheduling on it.
     unlock();
 
+    initPlaylistIfNeeded();
+
     isPlaying = true;
     step = 0;
     nextNoteTime = ctx.currentTime + 0.05;
     timerId = setInterval(schedule, lookaheadMs);
-    log(`Music started (ctxState=${ctx.state}, tempo=${tempo})`);
+    log(`Music started (ctxState=${ctx.state}, tempo=${tempo}${currentTuneName ? `, tune=${currentTuneName}` : ''})`);
   }
 
   function stop() {
@@ -256,6 +330,10 @@ function createPlayer(options = {}) {
       volume,
       melodyLength: melody.length,
       bassLength: bass.length,
+      tune: currentTuneName,
+      playlistSize: playlist ? playlist.length : 0,
+      playlistIndex: playlist ? playlistPos : 0,
+      playlistShuffled: !!shufflePlaylist,
     };
   }
 
@@ -270,6 +348,7 @@ function createPlayer(options = {}) {
     setVolume,
     setTempo,
     setSequence,
+    setPlaylist,
     getState,
   };
 }
@@ -298,12 +377,83 @@ function simpleBass() {
   ];
 }
 
+function maryHadALittleLamb() {
+  return [
+    { midi: 76, dur: 1 }, { midi: 74, dur: 1 }, { midi: 72, dur: 1 }, { midi: 74, dur: 1 },
+    { midi: 76, dur: 1 }, { midi: 76, dur: 1 }, { midi: 76, dur: 2 },
+    { midi: 74, dur: 1 }, { midi: 74, dur: 1 }, { midi: 74, dur: 2 },
+    { midi: 76, dur: 1 }, { midi: 79, dur: 1 }, { midi: 79, dur: 2 },
+    { midi: 76, dur: 1 }, { midi: 74, dur: 1 }, { midi: 72, dur: 1 }, { midi: 74, dur: 1 },
+    { midi: 76, dur: 1 }, { midi: 76, dur: 1 }, { midi: 76, dur: 1 }, { midi: 76, dur: 1 },
+    { midi: 74, dur: 1 }, { midi: 74, dur: 1 }, { midi: 76, dur: 1 }, { midi: 74, dur: 1 },
+    { midi: 72, dur: 4 },
+  ];
+}
+
+function frereJacques() {
+  return [
+    { midi: 72, dur: 1 }, { midi: 74, dur: 1 }, { midi: 76, dur: 1 }, { midi: 72, dur: 1 },
+    { midi: 72, dur: 1 }, { midi: 74, dur: 1 }, { midi: 76, dur: 1 }, { midi: 72, dur: 1 },
+    { midi: 76, dur: 1 }, { midi: 77, dur: 1 }, { midi: 79, dur: 2 },
+    { midi: 76, dur: 1 }, { midi: 77, dur: 1 }, { midi: 79, dur: 2 },
+    { midi: 79, dur: 0.5 }, { midi: 81, dur: 0.5 }, { midi: 79, dur: 0.5 }, { midi: 77, dur: 0.5 },
+    { midi: 76, dur: 1 }, { midi: 72, dur: 1 },
+    { midi: 79, dur: 0.5 }, { midi: 81, dur: 0.5 }, { midi: 79, dur: 0.5 }, { midi: 77, dur: 0.5 },
+    { midi: 76, dur: 1 }, { midi: 72, dur: 1 },
+    { midi: 72, dur: 1 }, { midi: 67, dur: 1 }, { midi: 72, dur: 2 },
+  ];
+}
+
+function odeToJoy() {
+  return [
+    { midi: 76, dur: 1 }, { midi: 76, dur: 1 }, { midi: 77, dur: 1 }, { midi: 79, dur: 1 },
+    { midi: 79, dur: 1 }, { midi: 77, dur: 1 }, { midi: 76, dur: 1 }, { midi: 74, dur: 1 },
+    { midi: 72, dur: 1 }, { midi: 72, dur: 1 }, { midi: 74, dur: 1 }, { midi: 76, dur: 1 },
+    { midi: 76, dur: 1.5 }, { midi: 74, dur: 0.5 }, { midi: 74, dur: 2 },
+    { midi: 76, dur: 1 }, { midi: 76, dur: 1 }, { midi: 77, dur: 1 }, { midi: 79, dur: 1 },
+    { midi: 79, dur: 1 }, { midi: 77, dur: 1 }, { midi: 76, dur: 1 }, { midi: 74, dur: 1 },
+    { midi: 72, dur: 1 }, { midi: 72, dur: 1 }, { midi: 74, dur: 1 }, { midi: 76, dur: 1 },
+    { midi: 74, dur: 1.5 }, { midi: 72, dur: 0.5 }, { midi: 72, dur: 2 },
+  ];
+}
+
+function rowRowRowYourBoat() {
+  return [
+    { midi: 72, dur: 1 }, { midi: 72, dur: 1 }, { midi: 72, dur: 1 }, { midi: 74, dur: 1 },
+    { midi: 76, dur: 2 },
+    { midi: 76, dur: 1 }, { midi: 74, dur: 1 }, { midi: 76, dur: 1 }, { midi: 77, dur: 1 },
+    { midi: 79, dur: 2 },
+    { midi: 84, dur: 0.5 }, { midi: 84, dur: 0.5 }, { midi: 84, dur: 0.5 }, { midi: 84, dur: 0.5 },
+    { midi: 79, dur: 0.5 }, { midi: 79, dur: 0.5 }, { midi: 79, dur: 0.5 }, { midi: 79, dur: 0.5 },
+    { midi: 76, dur: 1 }, { midi: 76, dur: 1 }, { midi: 74, dur: 1 }, { midi: 74, dur: 1 },
+    { midi: 72, dur: 4 },
+  ];
+}
+
+function publicDomainTunes() {
+  return [
+    { name: 'Twinkle Twinkle Little Star', melody: twinkleTwinkle(), tempo: 120 },
+    { name: 'Frère Jacques', melody: frereJacques(), tempo: 120 },
+    { name: 'Mary Had a Little Lamb', melody: maryHadALittleLamb(), tempo: 132 },
+    { name: 'Ode to Joy', melody: odeToJoy(), tempo: 120 },
+    { name: 'Row Row Row Your Boat', melody: rowRowRowYourBoat(), tempo: 120 },
+  ];
+}
+
 const melodies = {
   twinkleTwinkle,
+  frereJacques,
+  maryHadALittleLamb,
+  odeToJoy,
+  rowRowRowYourBoat,
 };
 
 const bassPatterns = {
   simple: simpleBass,
+};
+
+const tunes = {
+  publicDomain: publicDomainTunes,
 };
 
 const ChiptuneMusic = {
@@ -311,7 +461,8 @@ const ChiptuneMusic = {
   midiToFreq,
   melodies,
   bassPatterns,
+  tunes,
 };
 
-export { createPlayer, midiToFreq, melodies, bassPatterns };
+export { createPlayer, midiToFreq, melodies, bassPatterns, tunes };
 export default ChiptuneMusic;

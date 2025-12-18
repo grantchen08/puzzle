@@ -58,6 +58,11 @@
 
     var melody = Array.isArray(opts.melody) ? opts.melody : [];
     var bass = Array.isArray(opts.bass) ? opts.bass : [];
+    var playlist = Array.isArray(opts.playlist) ? opts.playlist : null; // [{ name, melody, bass?, tempo? }, ...]
+    var shufflePlaylist = !!opts.shufflePlaylist;
+    var playlistOrder = null;
+    var playlistPos = 0;
+    var currentTuneName = null;
 
     var tempo = typeof opts.tempo === 'number' ? opts.tempo : 120;
     var lookaheadMs = typeof opts.lookaheadMs === 'number' ? opts.lookaheadMs : 25;
@@ -76,6 +81,56 @@
     var timerId = null;
     var step = 0;
     var nextNoteTime = 0;
+
+    function shuffleArray(arr) {
+      for (var i = arr.length - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1));
+        var tmp = arr[i];
+        arr[i] = arr[j];
+        arr[j] = tmp;
+      }
+      return arr;
+    }
+
+    function initPlaylistIfNeeded() {
+      if (!playlist || !playlist.length) return;
+      if (!playlistOrder) {
+        playlistOrder = [];
+        for (var i = 0; i < playlist.length; i++) playlistOrder.push(i);
+        if (shufflePlaylist) shuffleArray(playlistOrder);
+        playlistPos = 0;
+      }
+      // If no melody provided explicitly, seed from playlist.
+      if (!melody.length) {
+        setTuneByIndex(playlistOrder[playlistPos], true);
+      }
+    }
+
+    function setTuneByIndex(idx, silent) {
+      if (!playlist || !playlist.length) return;
+      var t = playlist[idx];
+      if (!t) return;
+
+      if (Array.isArray(t.melody)) melody = t.melody;
+      if (Array.isArray(t.bass)) bass = t.bass;
+      if (typeof t.tempo === 'number') setTempo(t.tempo);
+      currentTuneName = t.name || ('tune-' + idx);
+      step = 0;
+      if (!silent) log('Tune -> ' + currentTuneName);
+    }
+
+    function nextTune() {
+      if (!playlist || !playlist.length) return;
+      initPlaylistIfNeeded();
+      if (!playlistOrder) return;
+
+      playlistPos++;
+      if (playlistPos >= playlistOrder.length) {
+        playlistPos = 0;
+        if (shufflePlaylist) shuffleArray(playlistOrder);
+      }
+      setTuneByIndex(playlistOrder[playlistPos], false);
+    }
 
     function ensure() {
       if (ctx) return true;
@@ -137,6 +192,21 @@
       if (typeof seq.tempo === 'number') setTempo(seq.tempo);
     }
 
+    function setPlaylist(pl, shuffle) {
+      playlist = Array.isArray(pl) ? pl : null;
+      shufflePlaylist = !!shuffle;
+      playlistOrder = null;
+      playlistPos = 0;
+      currentTuneName = null;
+      // If we're currently playing, switch immediately.
+      if (playlist && playlist.length) {
+        initPlaylistIfNeeded();
+        log('Playlist set (' + playlist.length + ' tunes' + (shufflePlaylist ? ', shuffled' : '') + ')');
+      } else {
+        log('Playlist cleared');
+      }
+    }
+
     function playOscNote(note) {
       if (!ctx || !musicGain) return;
 
@@ -178,6 +248,11 @@
         var secondsPerBeat = 60 / tempo;
 
         while (nextNoteTime < ctx.currentTime + scheduleAheadSec) {
+          // If using a playlist, advance tune on wrap-around.
+          if (playlist && melody.length && step > 0 && (step % melody.length === 0)) {
+            nextTune();
+          }
+
           var m = melody.length ? melody[step % melody.length] : null;
           var b = bass.length ? bass[step % bass.length] : null;
 
@@ -248,11 +323,13 @@
       // Try to resume, but don't block scheduling on it.
       unlock();
 
+      initPlaylistIfNeeded();
+
       isPlaying = true;
       step = 0;
       nextNoteTime = ctx.currentTime + 0.05;
       timerId = setInterval(schedule, lookaheadMs);
-      log('Music started (ctxState=' + ctx.state + ', tempo=' + tempo + ')');
+      log('Music started (ctxState=' + ctx.state + ', tempo=' + tempo + (currentTuneName ? ', tune=' + currentTuneName : '') + ')');
     }
 
     function stop() {
@@ -284,7 +361,11 @@
         tempo: tempo,
         volume: volume,
         melodyLength: melody.length,
-        bassLength: bass.length
+        bassLength: bass.length,
+        tune: currentTuneName,
+        playlistSize: playlist ? playlist.length : 0,
+        playlistIndex: playlist ? playlistPos : 0,
+        playlistShuffled: !!shufflePlaylist
       };
     }
 
@@ -299,6 +380,7 @@
       setVolume: setVolume,
       setTempo: setTempo,
       setSequence: setSequence,
+      setPlaylist: setPlaylist,
       getState: getState
     };
   }
@@ -334,14 +416,89 @@
     ];
   }
 
+  function maryHadALittleLamb() {
+    // Public domain (traditional). Key: C.
+    return [
+      { midi: 76, dur: 1 }, { midi: 74, dur: 1 }, { midi: 72, dur: 1 }, { midi: 74, dur: 1 },
+      { midi: 76, dur: 1 }, { midi: 76, dur: 1 }, { midi: 76, dur: 2 },
+      { midi: 74, dur: 1 }, { midi: 74, dur: 1 }, { midi: 74, dur: 2 },
+      { midi: 76, dur: 1 }, { midi: 79, dur: 1 }, { midi: 79, dur: 2 },
+      { midi: 76, dur: 1 }, { midi: 74, dur: 1 }, { midi: 72, dur: 1 }, { midi: 74, dur: 1 },
+      { midi: 76, dur: 1 }, { midi: 76, dur: 1 }, { midi: 76, dur: 1 }, { midi: 76, dur: 1 },
+      { midi: 74, dur: 1 }, { midi: 74, dur: 1 }, { midi: 76, dur: 1 }, { midi: 74, dur: 1 },
+      { midi: 72, dur: 4 }
+    ];
+  }
+
+  function frereJacques() {
+    // Public domain (traditional). Key: C.
+    return [
+      { midi: 72, dur: 1 }, { midi: 74, dur: 1 }, { midi: 76, dur: 1 }, { midi: 72, dur: 1 },
+      { midi: 72, dur: 1 }, { midi: 74, dur: 1 }, { midi: 76, dur: 1 }, { midi: 72, dur: 1 },
+      { midi: 76, dur: 1 }, { midi: 77, dur: 1 }, { midi: 79, dur: 2 },
+      { midi: 76, dur: 1 }, { midi: 77, dur: 1 }, { midi: 79, dur: 2 },
+      { midi: 79, dur: 0.5 }, { midi: 81, dur: 0.5 }, { midi: 79, dur: 0.5 }, { midi: 77, dur: 0.5 },
+      { midi: 76, dur: 1 }, { midi: 72, dur: 1 },
+      { midi: 79, dur: 0.5 }, { midi: 81, dur: 0.5 }, { midi: 79, dur: 0.5 }, { midi: 77, dur: 0.5 },
+      { midi: 76, dur: 1 }, { midi: 72, dur: 1 },
+      { midi: 72, dur: 1 }, { midi: 67, dur: 1 }, { midi: 72, dur: 2 } // end cadence
+    ];
+  }
+
+  function odeToJoy() {
+    // Beethoven (public domain). Key: C-ish (starting on E).
+    return [
+      { midi: 76, dur: 1 }, { midi: 76, dur: 1 }, { midi: 77, dur: 1 }, { midi: 79, dur: 1 },
+      { midi: 79, dur: 1 }, { midi: 77, dur: 1 }, { midi: 76, dur: 1 }, { midi: 74, dur: 1 },
+      { midi: 72, dur: 1 }, { midi: 72, dur: 1 }, { midi: 74, dur: 1 }, { midi: 76, dur: 1 },
+      { midi: 76, dur: 1.5 }, { midi: 74, dur: 0.5 }, { midi: 74, dur: 2 },
+      { midi: 76, dur: 1 }, { midi: 76, dur: 1 }, { midi: 77, dur: 1 }, { midi: 79, dur: 1 },
+      { midi: 79, dur: 1 }, { midi: 77, dur: 1 }, { midi: 76, dur: 1 }, { midi: 74, dur: 1 },
+      { midi: 72, dur: 1 }, { midi: 72, dur: 1 }, { midi: 74, dur: 1 }, { midi: 76, dur: 1 },
+      { midi: 74, dur: 1.5 }, { midi: 72, dur: 0.5 }, { midi: 72, dur: 2 }
+    ];
+  }
+
+  function rowRowRowYourBoat() {
+    // Public domain (traditional). Key: C.
+    return [
+      { midi: 72, dur: 1 }, { midi: 72, dur: 1 }, { midi: 72, dur: 1 }, { midi: 74, dur: 1 },
+      { midi: 76, dur: 2 },
+      { midi: 76, dur: 1 }, { midi: 74, dur: 1 }, { midi: 76, dur: 1 }, { midi: 77, dur: 1 },
+      { midi: 79, dur: 2 },
+      { midi: 84, dur: 0.5 }, { midi: 84, dur: 0.5 }, { midi: 84, dur: 0.5 }, { midi: 84, dur: 0.5 },
+      { midi: 79, dur: 0.5 }, { midi: 79, dur: 0.5 }, { midi: 79, dur: 0.5 }, { midi: 79, dur: 0.5 },
+      { midi: 76, dur: 1 }, { midi: 76, dur: 1 }, { midi: 74, dur: 1 }, { midi: 74, dur: 1 },
+      { midi: 72, dur: 4 }
+    ];
+  }
+
+  function publicDomainTunes() {
+    // Provide a ready-to-use shuffled playlist source.
+    return [
+      { name: 'Twinkle Twinkle Little Star', melody: twinkleTwinkle(), tempo: 120 },
+      { name: 'Frère Jacques', melody: frereJacques(), tempo: 120 },
+      { name: 'Mary Had a Little Lamb', melody: maryHadALittleLamb(), tempo: 132 },
+      { name: 'Ode to Joy', melody: odeToJoy(), tempo: 120 },
+      { name: 'Row Row Row Your Boat', melody: rowRowRowYourBoat(), tempo: 120 }
+    ];
+  }
+
   return {
     createPlayer: createPlayer,
     midiToFreq: midiToFreq,
     melodies: {
-      twinkleTwinkle: twinkleTwinkle
+      twinkleTwinkle: twinkleTwinkle,
+      frereJacques: frereJacques,
+      maryHadALittleLamb: maryHadALittleLamb,
+      odeToJoy: odeToJoy,
+      rowRowRowYourBoat: rowRowRowYourBoat
     },
     bassPatterns: {
       simple: simpleBass
+    },
+    tunes: {
+      publicDomain: publicDomainTunes
     }
   };
 });
