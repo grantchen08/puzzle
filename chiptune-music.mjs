@@ -196,8 +196,8 @@ function createPlayer(options = {}) {
       playPiano(freq, startTime, durationSec, gain);
     } else if (instrument === 'saxophone') {
       playSaxophone(freq, startTime, durationSec, gain);
-    } else if (instrument === 'xylophone') {
-      playXylophone(freq, startTime, durationSec, gain);
+    } else if (instrument === 'bell') {
+      playBell(freq, startTime, durationSec, gain);
     } else {
       playFlute(freq, startTime, durationSec, gain);
     }
@@ -412,58 +412,82 @@ function createPlayer(options = {}) {
     vibrato.stop(startTime + durationSec + 0.02);
   }
 
-  function playXylophone(freq, startTime, durationSec, gain) {
+  function playBell(freq, startTime, durationSec, gain) {
     const masterAmp = ctx.createGain();
     const filter = ctx.createBiquadFilter();
     
-    // Xylophone has bright, metallic sound
-    filter.type = 'highpass';
-    filter.frequency.setValueAtTime(800, startTime);
-    filter.Q.setValueAtTime(1, startTime);
+    // Bell has warm, resonant sound with emphasis on mids
+    filter.type = 'peaking';
+    filter.frequency.setValueAtTime(freq * 2, startTime);
+    filter.Q.setValueAtTime(2, startTime);
+    filter.gain.setValueAtTime(6, startTime);
 
-    // Xylophone has inharmonic overtones
+    // Bell modes (inharmonic partials characteristic of bells)
+    // Based on actual bell physics: hum tone, fundamental, minor third, fifth, octave
     const osc1 = ctx.createOscillator();
     const amp1 = ctx.createGain();
     osc1.type = 'sine';
-    osc1.frequency.setValueAtTime(freq, startTime);
-    amp1.gain.setValueAtTime(0.6, startTime);
+    osc1.frequency.setValueAtTime(freq * 0.5, startTime); // Hum tone
+    amp1.gain.setValueAtTime(0.2, startTime);
     
     const osc2 = ctx.createOscillator();
     const amp2 = ctx.createGain();
     osc2.type = 'sine';
-    osc2.frequency.setValueAtTime(freq * 2.76, startTime);
-    amp2.gain.setValueAtTime(0.3, startTime);
+    osc2.frequency.setValueAtTime(freq, startTime); // Fundamental (strike tone)
+    amp2.gain.setValueAtTime(0.5, startTime);
     
     const osc3 = ctx.createOscillator();
     const amp3 = ctx.createGain();
     osc3.type = 'sine';
-    osc3.frequency.setValueAtTime(freq * 5.4, startTime);
-    amp3.gain.setValueAtTime(0.2, startTime);
+    osc3.frequency.setValueAtTime(freq * 1.2, startTime); // Minor third
+    amp3.gain.setValueAtTime(0.3, startTime);
+    
+    const osc4 = ctx.createOscillator();
+    const amp4 = ctx.createGain();
+    osc4.type = 'sine';
+    osc4.frequency.setValueAtTime(freq * 1.5, startTime); // Fifth
+    amp4.gain.setValueAtTime(0.25, startTime);
+    
+    const osc5 = ctx.createOscillator();
+    const amp5 = ctx.createGain();
+    osc5.type = 'sine';
+    osc5.frequency.setValueAtTime(freq * 2, startTime); // Octave
+    amp5.gain.setValueAtTime(0.15, startTime);
 
-    // Very fast attack and decay (percussive)
-    const attack = 0.001;
-    const decay = Math.min(0.15, durationSec * 0.9);
+    // Fast attack with long, resonant decay (bell rings!)
+    const attack = 0.003;
+    const extendedDuration = Math.max(durationSec, 0.8); // Bells ring longer
+    const decay = extendedDuration * 0.95;
 
     masterAmp.gain.setValueAtTime(0.0001, startTime);
-    masterAmp.gain.exponentialRampToValueAtTime(Math.max(0.0002, gain * 1.5), startTime + attack);
+    masterAmp.gain.exponentialRampToValueAtTime(Math.max(0.0002, gain * 1.2), startTime + attack);
     masterAmp.gain.exponentialRampToValueAtTime(0.0001, startTime + attack + decay);
 
     osc1.connect(amp1);
     osc2.connect(amp2);
     osc3.connect(amp3);
+    osc4.connect(amp4);
+    osc5.connect(amp5);
     amp1.connect(filter);
     amp2.connect(filter);
     amp3.connect(filter);
+    amp4.connect(filter);
+    amp5.connect(filter);
     filter.connect(masterAmp);
     masterAmp.connect(musicGain);
 
     osc1.start(startTime);
     osc2.start(startTime);
     osc3.start(startTime);
+    osc4.start(startTime);
+    osc5.start(startTime);
     
-    osc1.stop(startTime + durationSec + 0.02);
-    osc2.stop(startTime + durationSec + 0.02);
-    osc3.stop(startTime + durationSec + 0.02);
+    const stopTime = startTime + extendedDuration + 0.02;
+    osc1.stop(stopTime);
+    osc2.stop(stopTime);
+    osc3.stop(stopTime);
+    osc4.stop(stopTime);
+    osc5.stop(stopTime);
   }
 
   function schedule() {
@@ -701,14 +725,14 @@ function publicDomainTunes() {
   return [
     { name: 'Twinkle Twinkle Little Star', melody: twinkleTwinkle(), tempo: 100, instrument: 'flute' },
     { name: 'Frère Jacques', melody: frereJacques(), tempo: 105, instrument: 'piano' },
-    { name: 'Mary Had a Little Lamb', melody: maryHadALittleLamb(), tempo: 110, instrument: 'xylophone' },
+    { name: 'Mary Had a Little Lamb', melody: maryHadALittleLamb(), tempo: 110, instrument: 'bell' },
     { name: 'Ode to Joy', melody: odeToJoy(), tempo: 100, instrument: 'saxophone' },
     { name: 'Row Row Row Your Boat', melody: rowRowRowYourBoat(), tempo: 95, instrument: 'flute' },
     { name: 'Twinkle Twinkle Little Star', melody: twinkleTwinkle(), tempo: 105, instrument: 'piano' },
     { name: 'Frère Jacques', melody: frereJacques(), tempo: 100, instrument: 'saxophone' },
     { name: 'Mary Had a Little Lamb', melody: maryHadALittleLamb(), tempo: 115, instrument: 'flute' },
     { name: 'Ode to Joy', melody: odeToJoy(), tempo: 95, instrument: 'piano' },
-    { name: 'Row Row Row Your Boat', melody: rowRowRowYourBoat(), tempo: 100, instrument: 'xylophone' },
+    { name: 'Row Row Row Your Boat', melody: rowRowRowYourBoat(), tempo: 100, instrument: 'bell' },
   ];
 }
 
