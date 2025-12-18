@@ -614,19 +614,32 @@
                 timerId: null,
                 nextNoteTime: 0,
                 step: 0,
-                tempo: 132, // BPM (snappy, retro feel)
+                tempo: 120, // BPM (fits simple melodies well)
                 lookaheadMs: 25,
                 scheduleAheadSec: 0.12
             };
 
-            // Simple upbeat 8-bit style loop (not the Mario theme, but similar "chiptune" vibe).
+            // "Twinkle Twinkle Little Star" (public domain) in a chiptune style.
             // MIDI note numbers; null = rest. dur = beats (quarter-note = 1).
             const MUSIC_MELODY = [
-                { midi: 76, dur: 0.5 }, { midi: 83, dur: 0.5 }, { midi: 81, dur: 0.5 }, { midi: 83, dur: 0.5 },
-                { midi: 79, dur: 1.0 }, { midi: 76, dur: 0.5 }, { midi: 79, dur: 0.5 },
-                { midi: 81, dur: 1.0 }, { midi: 79, dur: 0.5 }, { midi: 76, dur: 0.5 },
-                { midi: 74, dur: 1.0 }, { midi: null, dur: 0.5 }, { midi: 74, dur: 0.5 },
-                { midi: 76, dur: 1.0 }, { midi: null, dur: 1.0 }
+                // Phrase 1: C C G G A A G(hold)
+                { midi: 72, dur: 1 }, { midi: 72, dur: 1 }, { midi: 79, dur: 1 }, { midi: 79, dur: 1 },
+                { midi: 81, dur: 1 }, { midi: 81, dur: 1 }, { midi: 79, dur: 2 },
+                // Phrase 2: F F E E D D C(hold)
+                { midi: 77, dur: 1 }, { midi: 77, dur: 1 }, { midi: 76, dur: 1 }, { midi: 76, dur: 1 },
+                { midi: 74, dur: 1 }, { midi: 74, dur: 1 }, { midi: 72, dur: 2 },
+                // Phrase 3: G G F F E E D(hold)
+                { midi: 79, dur: 1 }, { midi: 79, dur: 1 }, { midi: 77, dur: 1 }, { midi: 77, dur: 1 },
+                { midi: 76, dur: 1 }, { midi: 76, dur: 1 }, { midi: 74, dur: 2 },
+                // Phrase 4: G G F F E E D(hold)
+                { midi: 79, dur: 1 }, { midi: 79, dur: 1 }, { midi: 77, dur: 1 }, { midi: 77, dur: 1 },
+                { midi: 76, dur: 1 }, { midi: 76, dur: 1 }, { midi: 74, dur: 2 },
+                // Phrase 5: C C G G A A G(hold)
+                { midi: 72, dur: 1 }, { midi: 72, dur: 1 }, { midi: 79, dur: 1 }, { midi: 79, dur: 1 },
+                { midi: 81, dur: 1 }, { midi: 81, dur: 1 }, { midi: 79, dur: 2 },
+                // Phrase 6: F F E E D D C(hold)
+                { midi: 77, dur: 1 }, { midi: 77, dur: 1 }, { midi: 76, dur: 1 }, { midi: 76, dur: 1 },
+                { midi: 74, dur: 1 }, { midi: 74, dur: 1 }, { midi: 72, dur: 2 }
             ];
 
             // Light bass pulse underneath the melody (triangle wave).
@@ -717,16 +730,6 @@
                                 durationSec: durSec * 0.98,
                                 gain: 0.08
                             });
-                            // Soft harmony a fifth up, occasional (adds sparkle)
-                            if (musicState.step % 4 === 2) {
-                                playOscNote({
-                                    freq: midiToFreq(m.midi + 7),
-                                    type: 'square',
-                                    startTime: start + 0.01,
-                                    durationSec: durSec * 0.65,
-                                    gain: 0.03
-                                });
-                            }
                         }
 
                         if (b.midi != null) {
